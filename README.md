@@ -25,7 +25,7 @@ Install Xcode:
   sudo xcodebuild -license
   ```
 
-Open `MiniCPM-demo.xcodeproj` with Xcode. It may take a moment for Xcode to automatically download the required dependencies.
+Open `MiniCPM-V-demo.xcodeproj` with Xcode. It may take a moment for Xcode to automatically download the required dependencies.
 
 In Xcode, select the target device at the top of the window, then click the "Run" (triangle) button to launch the demo.
 
@@ -49,7 +49,7 @@ Build the llama.cpp library for iOS using the script:
 Copy the built library into the corresponding directory of the iOS demo project:
 
 ```bash
-cp -r ./build-apple/llama.xcframework ../MiniCPM-o-demo-iOS/MiniCPM-demo/thirdparty
+cp -r ./build-apple/llama.xcframework ../MiniCPM-o-demo-iOS/MiniCPM-V-demo/thirdparty
 ```
 
 ## 3. GGUF Files

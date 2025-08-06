@@ -140,7 +140,7 @@
 		FA8511322E20DCC000748053 /* MBSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBSettingsViewController.swift; sourceTree = "<group>"; };
 		FA85113A2E20E52C00748053 /* MBRealtimeUnderstandingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBRealtimeUnderstandingViewController.swift; sourceTree = "<group>"; };
 		FA9C4B5A2C227A2C000D9BC4 /* MBHomeViewController+CheckSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MBHomeViewController+CheckSupport.swift"; sourceTree = "<group>"; };
-		FAA1195C2C12BA9C00251EB6 /* MiniCPM-demo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MiniCPM-demo-Bridging-Header.h"; sourceTree = "<group>"; };
+		FAA1195C2C12BA9C00251EB6 /* MiniCPM-V-demo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MiniCPM-V-demo-Bridging-Header.h"; sourceTree = "<group>"; };
 		FAA2DE382E2283F000A41C8D /* UINavigationController+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UINavigationController+Extensions.swift"; sourceTree = "<group>"; };
 		FAA2DE3A2E22845400A41C8D /* UIColor+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+Extensions.swift"; sourceTree = "<group>"; };
 		FAA3C9732E220A7F007FAD29 /* MBV4ModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV4ModelDownloadManager.swift; sourceTree = "<group>"; };
@@ -148,7 +148,7 @@
 		FAAC6D1C2E223B0F00D45121 /* MiniCPMModelConst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCPMModelConst.swift; sourceTree = "<group>"; };
 		FAAFDFF82C37F85B00BF35BE /* debugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = debugLog.swift; sourceTree = "<group>"; };
 		FABA27232E2DD94B00651C44 /* llama.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = llama.xcframework; sourceTree = "<group>"; };
-		FAC283BF2C1AFD9300A4FD25 /* MiniCPM-demo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "MiniCPM-demo.entitlements"; sourceTree = "<group>"; };
+		FAC283BF2C1AFD9300A4FD25 /* MiniCPM-V-demo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "MiniCPM-V-demo.entitlements"; sourceTree = "<group>"; };
 		FAC2A1D52C11B32500499465 /* MBChatModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBChatModel.swift; sourceTree = "<group>"; };
 		FAC2A1D82C11B3CF00499465 /* MBTextTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBTextTableViewCell.swift; sourceTree = "<group>"; };
 		FAC2A1DA2C11B3DD00499465 /* MBImageTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBImageTableViewCell.swift; sourceTree = "<group>"; };
@@ -244,7 +244,7 @@
 		FA3FA25A2C1176E80077F732 = {
 			isa = PBXGroup;
 			children = (
-				FA3FA2652C1176E80077F732 /* MiniCPM-demo */,
+				FA3FA2652C1176E80077F732 /* MiniCPM-V-demo */,
 				FA3FA2642C1176E80077F732 /* Products */,
 				FA3FA27D2C1178440077F732 /* Frameworks */,
 			);
@@ -258,13 +258,13 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		FA3FA2652C1176E80077F732 /* MiniCPM-demo */ = {
+		FA3FA2652C1176E80077F732 /* MiniCPM-V-demo */ = {
 			isa = PBXGroup;
 			children = (
 				FAD6428A2E2A223800088528 /* MTMDWrapper */,
 				FAF0892D2E288CA10007CFD5 /* thirdparty */,
-				FAC283BF2C1AFD9300A4FD25 /* MiniCPM-demo.entitlements */,
-				FAA1195C2C12BA9C00251EB6 /* MiniCPM-demo-Bridging-Header.h */,
+				FAC283BF2C1AFD9300A4FD25 /* MiniCPM-V-demo.entitlements */,
+				FAA1195C2C12BA9C00251EB6 /* MiniCPM-V-demo-Bridging-Header.h */,
 				FA3FA2742C1176E90077F732 /* Info.plist */,
 				FA3FA2662C1176E80077F732 /* AppDelegate.swift */,
 				FA3FA2672C1176E80077F733 /* SceneDelegate.swift */,
@@ -272,7 +272,7 @@
 				FA3FA2712C1176E90077F732 /* LaunchScreen.storyboard */,
 				FA3FA2932C118A980077F732 /* Sources */,
 			);
-			path = "MiniCPM-demo";
+			path = "MiniCPM-V-demo";
 			sourceTree = "<group>";
 		};
 		FA3FA27D2C1178440077F732 /* Frameworks */ = {
@@ -603,7 +603,7 @@
 				FA2449632C3D0B7B0012D624 /* HXPhotoPicker */,
 				FA1ED0A72E225D5A00370614 /* ZipArchive */,
 			);
-			productName = "MiniCPM-demo";
+			productName = "MiniCPM-V-demo";
 			productReference = FA3FA2632C1176E80077F732 /* MiniCPM-V-demo.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -870,7 +870,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CODE_SIGN_ENTITLEMENTS = "MiniCPM-demo/MiniCPM-demo.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "MiniCPM-V-demo/MiniCPM-V-demo.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1.0;
@@ -879,12 +879,12 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/MiniCPM-demo",
+					"$(PROJECT_DIR)/MiniCPM-V-demo",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "";
-				INFOPLIST_FILE = "MiniCPM-demo/Info.plist";
+				INFOPLIST_FILE = "MiniCPM-V-demo/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "MiniCPM-V-Demo";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -911,7 +911,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "MiniCPM-demo/MiniCPM-demo-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "MiniCPM-V-demo/MiniCPM-V-demo-Bridging-Header.h";
 				SWIFT_OBJC_INTEROP_MODE = objcxx;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -925,7 +925,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CODE_SIGN_ENTITLEMENTS = "MiniCPM-demo/MiniCPM-demo.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "MiniCPM-V-demo/MiniCPM-V-demo.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1.0;
@@ -934,12 +934,12 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/MiniCPM-demo",
+					"$(PROJECT_DIR)/MiniCPM-V-demo",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "";
-				INFOPLIST_FILE = "MiniCPM-demo/Info.plist";
+				INFOPLIST_FILE = "MiniCPM-V-demo/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "MiniCPM-V-Demo";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
@@ -966,7 +966,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "MiniCPM-demo/MiniCPM-demo-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "MiniCPM-V-demo/MiniCPM-V-demo-Bridging-Header.h";
 				SWIFT_OBJC_INTEROP_MODE = objcxx;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
