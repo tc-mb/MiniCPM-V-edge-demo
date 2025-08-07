@@ -121,7 +121,7 @@ public class MTMDWrapperExample: ObservableObject {
         do {
             // 使用默认路径或传入的路径
             let defaultModelPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("ggml-model-Q4_0.gguf").path
-            let defaultMmprojPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("mmproj-model-f16.gguf").path
+            let defaultMmprojPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("mmproj-model-f16-iOS.gguf").path
             
             let finalModelPath = modelPath ?? defaultModelPath
             let finalMmprojPath = mmprojPath ?? defaultMmprojPath

@@ -76,18 +76,18 @@ struct MiniCPMModelConst {
     // MARK: - mbv4 mmproj VIT 模型
     
     /// MiniCPM 多模态-mmproj 模型 文件名
-    static let mmprojv4_FileName = "mmproj-model-f16.gguf"
+    static let mmprojv4_FileName = "mmproj-model-f16-iOS.gguf"
     
     /// MiniCPM 多模态-mmproj 模型 NAS 下载地址
-    static let mmprojv4_URLString = "https://huggingface.co/openbmb/MiniCPM-V-4-gguf/resolve/main/mmproj-model-f16.gguf"
+    static let mmprojv4_URLString = "https://huggingface.co/openbmb/MiniCPM-V-4-gguf/resolve/main/mmproj-model-f16-iOS.gguf"
 
-    static let mmprojv4_BackUpURLString = "https://modelscope.cn/api/v1/models/OpenBMB/MiniCPM-V-4-gguf/repo?Revision=master&FilePath=mmproj-model-f16.gguf"
+    static let mmprojv4_BackUpURLString = "https://modelscope.cn/api/v1/models/OpenBMB/MiniCPM-V-4-gguf/repo?Revision=master&FilePath=mmproj-model-f16-iOS.gguf"
     
     /// 显示在 UI 上名字-mmproj
     static let modelMMProjv4_DisplayedName = "MiniCPM-V 4.0 4B VPM"
     
     /// mmproj gguf 文件 md5 值
-    static let modelMMProjv4_MD5 = "fe15375bb4c579858df6054d2a8b639d"
+    static let modelMMProjv4_MD5 = "cab808b37cbc207ab2b2dd5c53e9b16b"
     
     // MARK: - mbv4 ANE 利用模块
     
