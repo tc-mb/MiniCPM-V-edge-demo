@@ -26,6 +26,7 @@ extension MBHomeViewController {
 
             var modelURL: URL?
             var mmprojURL: URL?
+            var selectedModelType: CurrentUsingModelTypeV2 = .Unknown
             
             // 判断用户在设置页选中的模型
             let lastSelectedModelString = UserDefaults.standard.value(forKey: "current_selected_model") as? String ?? ""
@@ -33,10 +34,12 @@ extension MBHomeViewController {
                 // V-2.6 8B 多模态模型
                 modelURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(MiniCPMModelConst.modelQ4_K_MFileName)
                 mmprojURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(MiniCPMModelConst.mmprojFileName)
+                selectedModelType = .V26MultiModel
             } else if lastSelectedModelString == "V4MultiModel" {
                 // V-4.0 4B 多模态模型
                 modelURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(MiniCPMModelConst.modelv4_Q4_K_M_FileName)
                 mmprojURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(MiniCPMModelConst.mmprojv4_FileName)
+                selectedModelType = .V4MultiModel
             }
             
             guard let modelURL = modelURL,
@@ -50,20 +53,15 @@ extension MBHomeViewController {
             }
 
             DispatchQueue.main.async {
-                if modelURL.absoluteString.contains("v26") {
-                    self.currentUsingModelType = .V26MultiModel
-                    self.mtmdWrapperExample?.currentUsingModelType = .V26MultiModel
-                } else if modelURL.absoluteString.contains("v4") {
-                    self.currentUsingModelType = .V4MultiModel
-                    self.mtmdWrapperExample?.currentUsingModelType = .V4MultiModel
-                }
+                self.currentUsingModelType = selectedModelType
+                self.mtmdWrapperExample?.currentUsingModelType = selectedModelType
             }
             
             // 加载模型
             if await self.mtmdWrapperExample?.multiModelLoadingSuccess == false {
-                if await self.mtmdWrapperExample?.currentUsingModelType == .V26MultiModel {
+                if selectedModelType == .V26MultiModel {
                     await self.mtmdWrapperExample?.initialize(modelPath: modelURL.path, mmprojPath: mmprojURL.path)
-                } else if await self.mtmdWrapperExample?.currentUsingModelType == .V4MultiModel {
+                } else if selectedModelType == .V4MultiModel {
                     
                     await self.mtmdWrapperExample?.initialize()
                     

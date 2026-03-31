@@ -117,19 +117,28 @@ public class MTMDWrapperExample: ObservableObject {
     /// - Parameters:
     ///   - modelPath: 模型路径（可选，默认使用文档目录中的模型）
     ///   - mmprojPath: 多模态投影模型路径（可选，默认使用文档目录中的模型）
-    public func initialize(modelPath: String? = nil, mmprojPath: String? = nil) async {
+    ///   - coremlPath: CoreML 模型路径（可选，用于 ANE 加速）
+    public func initialize(modelPath: String? = nil, mmprojPath: String? = nil, coremlPath: String? = nil) async {
         do {
-            // 使用默认路径或传入的路径
-            let defaultModelPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("ggml-model-Q4_0.gguf").path
-            let defaultMmprojPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("mmproj-model-f16-iOS.gguf").path
+            let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let defaultModelPath = documentsDir.appendingPathComponent("ggml-model-Q4_0.gguf").path
+            let defaultMmprojPath = documentsDir.appendingPathComponent(MiniCPMModelConst.mmprojv4_FileName).path
             
             let finalModelPath = modelPath ?? defaultModelPath
             let finalMmprojPath = mmprojPath ?? defaultMmprojPath
             
-            let params = MTMDParams.default(modelPath: finalModelPath, mmprojPath: finalMmprojPath)
+            var finalCoremlPath = coremlPath ?? ""
+            if finalCoremlPath.isEmpty {
+                let defaultCoremlDir = documentsDir.appendingPathComponent("coreml_minicpmv40_vit_f16.mlmodelc").path
+                if FileManager.default.fileExists(atPath: defaultCoremlDir) {
+                    finalCoremlPath = defaultCoremlDir
+                }
+            }
+            
+            let params = MTMDParams.default(modelPath: finalModelPath, mmprojPath: finalMmprojPath, coremlPath: finalCoremlPath)
             self.params = params
             try await mtmdWrapper.initialize(with: params)
-            print("初始化成功")
+            print("初始化成功, CoreML: \(finalCoremlPath.isEmpty ? "未启用" : "已启用")")
             self.multiModelLoadingSuccess = true
         } catch {
             errorMessage = error.localizedDescription

@@ -17,6 +17,9 @@ import llama
     /// 多模态投影模型路径
     public let mmprojPath: String
     
+    /// CoreML 模型路径（用于 ANE 加速）
+    public let coremlPath: String
+    
     /// 预测长度
     public let nPredict: Int
     
@@ -42,6 +45,7 @@ import llama
     /// - Parameters:
     ///   - modelPath: 模型路径
     ///   - mmprojPath: 多模态投影模型路径
+    ///   - coremlPath: CoreML 模型路径，默认为空（不使用 ANE 加速）
     ///   - nPredict: 预测长度，默认 100
     ///   - nCtx: 上下文长度，默认 4096
     ///   - nThreads: 线程数，默认 4
@@ -52,6 +56,7 @@ import llama
     public init(
         modelPath: String,
         mmprojPath: String,
+        coremlPath: String = "",
         nPredict: Int = 100,
         nCtx: Int = 4096,
         nThreads: Int = 4,
@@ -62,6 +67,7 @@ import llama
     ) {
         self.modelPath = modelPath
         self.mmprojPath = mmprojPath
+        self.coremlPath = coremlPath
         self.nPredict = nPredict
         self.nCtx = nCtx
         self.nThreads = nThreads
@@ -76,10 +82,11 @@ import llama
     ///   - modelPath: 模型路径
     ///   - mmprojPath: 多模态投影模型路径
     /// - Returns: 默认参数配置
-    public static func `default`(modelPath: String, mmprojPath: String) -> MTMDParams {
+    public static func `default`(modelPath: String, mmprojPath: String, coremlPath: String = "") -> MTMDParams {
         return MTMDParams(
             modelPath: modelPath,
-            mmprojPath: mmprojPath
+            mmprojPath: mmprojPath,
+            coremlPath: coremlPath
         )
     }
     
@@ -88,6 +95,7 @@ import llama
         var params = mtmd_ios_params_default()
         params.model_path = std.string(modelPath)
         params.mmproj_path = std.string(mmprojPath)
+        params.coreml_path = std.string(coremlPath)
         params.n_predict = Int32(nPredict)
         params.n_ctx = Int32(nCtx)
         params.n_threads = Int32(nThreads)

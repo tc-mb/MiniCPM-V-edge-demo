@@ -256,7 +256,7 @@ import llama
         }
         
         // 删除解压后的.mlmodelc文件夹
-        let mlmodelcFolderName = "ane_minicpmv4_vit_f16.mlmodelc"
+        let mlmodelcFolderName = "coreml_minicpmv40_vit_f16.mlmodelc"
         let mlmodelcFolderURL = documentsPath.appendingPathComponent(mlmodelcFolderName)
         if fileManager.fileExists(atPath: mlmodelcFolderURL.path) {
             do {

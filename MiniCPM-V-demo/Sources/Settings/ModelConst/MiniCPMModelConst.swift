@@ -16,7 +16,7 @@ struct MiniCPMModelConst {
     static let modelQ4_K_MFileName = "ggml-model-Q4_0.gguf"
     
     /// MiniCPM 多模态-主模型 Q4_K_M oss 下载地址
-    static let modelQ4_K_MURLString = "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/blob/main/ggml-model-Q4_0.gguf"
+    static let modelQ4_K_MURLString = "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/ggml-model-Q4_0.gguf"
     
     /// 显示在 UI 上名字-Q4_K_M
     static let modelQ4_K_MDisplayedName = "MiniCPM-V 2.6 8B LLM INT4"
@@ -31,7 +31,7 @@ struct MiniCPMModelConst {
     static let mmprojFileName = "mmproj-model-f16.gguf"
     
     /// MiniCPM 多模态-mmproj 模型 NAS 下载地址
-    static let mmprojURLString = "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/blob/main/mmproj-model-f16.gguf"
+    static let mmprojURLString = "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/mmproj-model-f16.gguf"
     
     /// 显示在 UI 上名字-mmproj
     static let modelMMProjDisplayedName = "MiniCPM-V 2.6 8B VPM"
@@ -46,7 +46,7 @@ struct MiniCPMModelConst {
     static let mlmodelcZipFileName = "ane_minicpmv26_f32.mlmodelc.zip"
     
     /// ANE 模型压缩包下载地址
-    static let mlmodelcZipFileURLString = "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/blob/main/ane_minicpmv26_f32.mlmodelc.zip"
+    static let mlmodelcZipFileURLString = "https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf/resolve/main/ane_minicpmv26_f32.mlmodelc.zip"
     
     /// ANE 利用显示在设置页的名称
     static let mlmodelcZipFileDisplayedName = "MiniCPM-V 2.6 8B ANE"
@@ -79,31 +79,30 @@ struct MiniCPMModelConst {
     static let mmprojv4_FileName = "mmproj-model-f16-iOS.gguf"
     
     /// MiniCPM 多模态-mmproj 模型 NAS 下载地址
-    static let mmprojv4_URLString = "https://huggingface.co/openbmb/MiniCPM-V-4-gguf/resolve/main/mmproj-model-f16-iOS.gguf"
+    static let mmprojv4_URLString = "https://huggingface.co/openbmb/MiniCPM-V-4-gguf/resolve/main/mmproj-model-f16.gguf"
 
-    static let mmprojv4_BackUpURLString = "https://modelscope.cn/api/v1/models/OpenBMB/MiniCPM-V-4-gguf/repo?Revision=master&FilePath=mmproj-model-f16-iOS.gguf"
+    static let mmprojv4_BackUpURLString = "https://modelscope.cn/api/v1/models/OpenBMB/MiniCPM-V-4-gguf/repo?Revision=master&FilePath=mmproj-model-f16.gguf"
     
     /// 显示在 UI 上名字-mmproj
     static let modelMMProjv4_DisplayedName = "MiniCPM-V 4.0 4B VPM"
     
     /// mmproj gguf 文件 md5 值
-    static let modelMMProjv4_MD5 = "cab808b37cbc207ab2b2dd5c53e9b16b"
+    static let modelMMProjv4_MD5 = "fe15375bb4c579858df6054d2a8b639d"
     
     // MARK: - mbv4 ANE 利用模块
     
     /// ANE 利用压缩包 文件名
-    static let mlmodelcv4_ZipFileName = "ane_minicpmv4_vit_f16.mlmodelc.zip"
+    static let mlmodelcv4_ZipFileName = "coreml_minicpmv40_vit_f16.mlmodelc.zip"
     
     /// ANE 模型压缩包下载地址
-    static let mlmodelcv4_ZipFileURLString = "https://huggingface.co/openbmb/MiniCPM-V-4-gguf/resolve/main/ane_minicpmv4_vit_f16.mlmodelc.zip"
+    static let mlmodelcv4_ZipFileURLString = "https://huggingface.co/openbmb/MiniCPM-V-4-gguf/resolve/main/coreml_minicpmv40_vit_f16.mlmodelc.zip"
     
-    static let mlmodelcv4_ZipFileBackUpURLString = "https://modelscope.cn/api/v1/models/OpenBMB/MiniCPM-V-4-gguf/repo?Revision=master&FilePath=ane_minicpmv4_vit_f16.mlmodelc.zip"
+    static let mlmodelcv4_ZipFileBackUpURLString = "https://modelscope.cn/api/v1/models/OpenBMB/MiniCPM-V-4-gguf/repo?Revision=master&FilePath=coreml_minicpmv40_vit_f16.mlmodelc.zip"
     
     /// ANE 利用显示在设置页的名称
     static let mlmodelcv4_ZipFileDisplayedName = "MiniCPM-V 4.0 4B ANE"
     
-    /// ANE 利用压缩包 md5 oss
-    // local static let mlmodelcv4_ZipFileMD5 = "74f07d49c04b83e7c7e362b24116b205"
-    static let mlmodelcv4_ZipFileMD5 = "363281ef2b6a5514e51f2855476ebdef"
+    /// ANE 利用压缩包 md5
+    static let mlmodelcv4_ZipFileMD5 = "150a316e49dee3da04d72039ee2ca390"
     
 }
