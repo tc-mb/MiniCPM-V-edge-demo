@@ -125,6 +125,7 @@ public class MTMDWrapper: ObservableObject {
                 if result != 0 {
                     let errorMessage = mtmd_ios_get_last_error(ctx)
                     let error = errorMessage != nil ? String(cString: errorMessage!) : "Unknown error"
+                    print("MTMDWrapper: addImageInBackground failed, imagePath=\(imagePath), error=\(error)")
                     continuation.resume(throwing: MTMDError.imageLoadFailed(error))
                 } else {
                     // 回到主线程更新状态
@@ -154,6 +155,7 @@ public class MTMDWrapper: ObservableObject {
                 if result != 0 {
                     let errorMessage = mtmd_ios_get_last_error(ctx)
                     let error = errorMessage != nil ? String(cString: errorMessage!) : "Unknown error"
+                    print("MTMDWrapper: addFrameInBackground failed, imagePath=\(imagePath), error=\(error)")
                     continuation.resume(throwing: MTMDError.imageLoadFailed(error))
                 } else {
                     // 回到主线程更新状态

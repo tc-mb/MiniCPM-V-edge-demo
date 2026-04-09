@@ -22,6 +22,14 @@
  *          Issues related to API usage may receive lower priority support.
  *
  * For the usage, see an example in mtmd-cli.cpp
+ *
+ * For contributors:
+ * - Make sure the C API is aligned with the libllama C API (as in llama.h)
+ * - Do not include model name (e.g., qwen, gemma) in the API, use generic terms instead
+ * - Keep the API minimal, do not expose internal details unless necessary
+ *
+ * IMPORTANT: The mtmd module does NOT accept pull requests that are fully or predominantly AI-generated.
+ * We encourage human contributors to ensure the quality and reliability of the codebase.
  */
 
 #ifdef LLAMA_SHARED
@@ -79,10 +87,21 @@ struct mtmd_context_params {
     bool use_gpu;
     bool print_timings;
     int n_threads;
-    enum ggml_log_level verbosity;
     const char * image_marker; // deprecated, use media_marker instead
     const char * media_marker;
-    const char * coreml_model_path; // path to CoreML model for iOS
+    enum llama_flash_attn_type flash_attn_type;
+    bool warmup; // whether to run a warmup encode pass after initialization
+
+    // limit number of image tokens, only for vision models with dynamic resolution
+    int image_min_tokens; // minimum number of tokens for image input (default: read from metadata)
+    int image_max_tokens; // maximum number of tokens for image input (default: read from metadata)
+
+    // callback function passed over to mtmd proper
+    ggml_backend_sched_eval_callback cb_eval;
+    void * cb_eval_user_data;
+
+    // CoreML model path for ANE acceleration (iOS)
+    const char * coreml_model_path;
 };
 
 MTMD_API const char * mtmd_default_marker(void);
@@ -109,9 +128,9 @@ MTMD_API bool mtmd_support_vision(mtmd_context * ctx);
 // whether the current model supports audio input
 MTMD_API bool mtmd_support_audio(mtmd_context * ctx);
 
-// get audio bitrate in Hz, for example 16000 for Whisper
+// get audio sample rate in Hz, for example 16000 for Whisper
 // return -1 if audio is not supported
-MTMD_API int mtmd_get_audio_bitrate(mtmd_context * ctx);
+MTMD_API int mtmd_get_audio_sample_rate(mtmd_context * ctx);
 
 // mtmd_bitmap
 //
@@ -154,7 +173,7 @@ MTMD_API const mtmd_image_tokens *  mtmd_input_chunk_get_tokens_image(const mtmd
 MTMD_API size_t                     mtmd_input_chunk_get_n_tokens    (const mtmd_input_chunk * chunk);
 // returns nullptr for ID on text chunk
 MTMD_API const char *               mtmd_input_chunk_get_id          (const mtmd_input_chunk * chunk);
-// number of temporal positions (always 1 for M-RoPE, n_tokens otherwise)
+// number of temporal positions (equals to max(t,h,w) for M-RoPE; equals to n_tokens otherwise)
 MTMD_API llama_pos                  mtmd_input_chunk_get_n_pos       (const mtmd_input_chunk * chunk);
 
 // in case you want to use custom logic to handle the chunk (i.e. KV cache management)
@@ -172,7 +191,7 @@ MTMD_API size_t       mtmd_image_tokens_get_n_tokens(const mtmd_image_tokens * i
 MTMD_API size_t       mtmd_image_tokens_get_nx      (const mtmd_image_tokens * image_tokens);
 MTMD_API size_t       mtmd_image_tokens_get_ny      (const mtmd_image_tokens * image_tokens);
 MTMD_API const char * mtmd_image_tokens_get_id      (const mtmd_image_tokens * image_tokens); // TODO: deprecate
-// number of temporal positions (always 1 for M-RoPE, n_tokens otherwise)
+// number of temporal positions (equals to max(t,h,w) for M-RoPE; equals to n_tokens otherwise)
 MTMD_API llama_pos    mtmd_image_tokens_get_n_pos   (const mtmd_image_tokens * image_tokens); // TODO: deprecate
 
 // tokenize an input text prompt and a list of bitmaps (images/audio)
@@ -197,12 +216,6 @@ MTMD_API int32_t mtmd_tokenize(mtmd_context * ctx,
                                const mtmd_bitmap ** bitmaps,
                                size_t n_bitmaps);
 
-MTMD_API int32_t mtmd_tokenize_video(mtmd_context * ctx,
-                               mtmd_input_chunks * output,
-                               const mtmd_input_text * text,
-                               const mtmd_bitmap ** bitmaps,
-                               size_t n_bitmaps);
-
 // returns 0 on success
 // TODO: deprecate
 MTMD_API int32_t mtmd_encode(mtmd_context * ctx,
@@ -214,8 +227,12 @@ MTMD_API int32_t mtmd_encode_chunk(mtmd_context * ctx,
 
 // get output embeddings from the last encode pass
 // the reading size (in bytes) is equal to:
-// llama_model_n_embd(model) * mtmd_input_chunk_get_n_tokens(chunk) * sizeof(float)
+// llama_model_n_embd_inp(model) * mtmd_input_chunk_get_n_tokens(chunk) * sizeof(float)
 MTMD_API float * mtmd_get_output_embd(mtmd_context * ctx);
+
+// Set callback for all future logging events.
+// If this is not called, or NULL is supplied, everything is output on stderr.
+MTMD_API void mtmd_log_set(ggml_log_callback log_callback, void * user_data);
 
 /////////////////////////////////////////
 
@@ -263,12 +280,12 @@ struct bitmap {
         ptr.reset(mtmd_bitmap_init(nx, ny, data));
     }
     ~bitmap() = default;
-    uint32_t nx() { return mtmd_bitmap_get_nx(ptr.get()); }
-    uint32_t ny() { return mtmd_bitmap_get_ny(ptr.get()); }
-    const unsigned char * data() { return mtmd_bitmap_get_data(ptr.get()); }
-    size_t n_bytes() { return mtmd_bitmap_get_n_bytes(ptr.get()); }
-    std::string id() { return mtmd_bitmap_get_id(ptr.get()); }
-    void set_id(const char * id) { mtmd_bitmap_set_id(ptr.get(), id); }
+    uint32_t nx() const { return mtmd_bitmap_get_nx(ptr.get()); }
+    uint32_t ny() const { return mtmd_bitmap_get_ny(ptr.get()); }
+    const unsigned char * data() const { return mtmd_bitmap_get_data(ptr.get()); }
+    size_t n_bytes() const { return mtmd_bitmap_get_n_bytes(ptr.get()); }
+    std::string id() const { return mtmd_bitmap_get_id(ptr.get()); }
+    void set_id(const char * id) const { mtmd_bitmap_set_id(ptr.get(), id); }
 };
 
 struct bitmaps {
@@ -292,8 +309,8 @@ struct input_chunks {
     input_chunks() = default;
     input_chunks(mtmd_input_chunks * chunks) : ptr(chunks) {}
     ~input_chunks() = default;
-    size_t size() { return mtmd_input_chunks_size(ptr.get()); }
-    const mtmd_input_chunk * operator[](size_t idx) {
+    size_t size() const { return mtmd_input_chunks_size(ptr.get()); }
+    const mtmd_input_chunk * operator[](size_t idx) const {
         return mtmd_input_chunks_get(ptr.get(), idx);
     }
 };

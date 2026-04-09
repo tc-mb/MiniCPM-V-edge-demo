@@ -25,6 +25,8 @@ enum CurrentUsingModelTypeV2 {
     case V26MultiModel
     /// V4 多模态模型
     case V4MultiModel
+    /// V4.6 多模态模型
+    case V46MultiModel
 }
 
 /// 将要 embedding 的图片的来源
@@ -127,11 +129,16 @@ public class MTMDWrapperExample: ObservableObject {
             let finalModelPath = modelPath ?? defaultModelPath
             let finalMmprojPath = mmprojPath ?? defaultMmprojPath
             
+            // 仅当当前加载的是 V4.0 mmproj 时，才自动使用文档目录下的 V4.0 CoreML。
+            // 若对 V4.6 / 2.6 等误用此处回退，会把 V4.0 ANE 与 V4.6 merger 混用，视觉 embedding 完全错误。
             var finalCoremlPath = coremlPath ?? ""
             if finalCoremlPath.isEmpty {
-                let defaultCoremlDir = documentsDir.appendingPathComponent("coreml_minicpmv40_vit_f16.mlmodelc").path
-                if FileManager.default.fileExists(atPath: defaultCoremlDir) {
-                    finalCoremlPath = defaultCoremlDir
+                let mmprojName = URL(fileURLWithPath: finalMmprojPath).lastPathComponent
+                if mmprojName == MiniCPMModelConst.mmprojv4_FileName {
+                    let defaultCoremlDir = documentsDir.appendingPathComponent("coreml_minicpmv40_vit_f16.mlmodelc").path
+                    if FileManager.default.fileExists(atPath: defaultCoremlDir) {
+                        finalCoremlPath = defaultCoremlDir
+                    }
                 }
             }
             

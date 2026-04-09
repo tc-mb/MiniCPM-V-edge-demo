@@ -40,6 +40,11 @@ extension MBHomeViewController {
                 modelURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(MiniCPMModelConst.modelv4_Q4_K_M_FileName)
                 mmprojURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(MiniCPMModelConst.mmprojv4_FileName)
                 selectedModelType = .V4MultiModel
+            } else if lastSelectedModelString == "V46MultiModel" {
+                // V-4.6 多模态模型
+                modelURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(MiniCPMModelConst.modelv46_FileName)
+                mmprojURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(MiniCPMModelConst.mmprojv46_FileName)
+                selectedModelType = .V46MultiModel
             }
             
             guard let modelURL = modelURL,
@@ -72,6 +77,13 @@ extension MBHomeViewController {
                     let whiteImagePath = documentsPath.appending("/white.png")
                     try? whiteImageData?.write(to: URL(fileURLWithPath: whiteImagePath))
                     _ = await self.mtmdWrapperExample?.addImageInBackground(whiteImagePath)
+                } else if selectedModelType == .V46MultiModel {
+                    let coremlPath = MiniCPMV46CoreMLBootstrap.resolvedCoreMLPathInDocuments()
+                    await self.mtmdWrapperExample?.initialize(
+                        modelPath: modelURL.path,
+                        mmprojPath: mmprojURL.path,
+                        coremlPath: coremlPath
+                    )
                 }
                 
                 // 更新模型加载状态为：加载成功，maybe 不需要，因为直接选择一张图提问时，也可能要重新 load model。

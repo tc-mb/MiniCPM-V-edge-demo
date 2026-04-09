@@ -228,12 +228,13 @@ extension MBSettingsViewController: UITableViewDelegate {
         // 处理模型选择逻辑 - 现在改为跳转到详情页面
         if let title = model.title {
             if title == "MiniCPM-V 2.6 8B" {
-                // 跳转到 MiniCPM-V 2.6 8B 详情页面
                 let detailVC = MBV26ModelDetailViewController(with: mtmdWrapperExample)
                 self.navigationController?.pushViewController(detailVC, animated: true)
             } else if title == "MiniCPM-V 4.0 4B" {
-                // 跳转到 MiniCPM-V 4.0 4B 详情页面
                 let detailVC = MBV4ModelDetailViewController(with: mtmdWrapperExample)
+                self.navigationController?.pushViewController(detailVC, animated: true)
+            } else if title == "MiniCPM-V 4.6" {
+                let detailVC = MBV46ModelDetailViewController(with: mtmdWrapperExample)
                 self.navigationController?.pushViewController(detailVC, animated: true)
             }
         }
@@ -318,7 +319,7 @@ extension MBSettingsViewController {
             debugLog("-->> SettingsVC: V26模型设置为未选中状态")
         }
         
-        // sectionA.append(model1)
+        sectionA.append(model1)
         
         // MiniCPM-V 4.0 4B
         let model2 = MBSettingsModel()
@@ -338,6 +339,22 @@ extension MBSettingsViewController {
         }
         
         sectionA.append(model2)
+        
+        // MiniCPM-V 4.6
+        let model3 = MBSettingsModel()
+        model3.title = "MiniCPM-V 4.6"
+        model3.icon = UIImage(systemName: "cpu")
+        model3.accessoryIcon = UIImage(named: "setting_accessory_icon")
+        model3.selectedIcon = UIImage(systemName: "checkmark.circle.fill")
+        
+        if currentSelectedModel == "V46MultiModel" {
+            model3.status = "selected"
+            model3.statusString = "正在使用"
+        } else {
+            model3.status = "none"
+        }
+        
+        sectionA.append(model3)
         
         // 添加到数据源
         if dataArray.count > 0 {
@@ -397,6 +414,8 @@ extension MBSettingsViewController {
             mtmdWrapperExample?.currentUsingModelType = .V26MultiModel
         } else if currentSelectedModel == "V4MultiModel" {
             mtmdWrapperExample?.currentUsingModelType = .V4MultiModel
+        } else if currentSelectedModel == "V46MultiModel" {
+            mtmdWrapperExample?.currentUsingModelType = .V46MultiModel
         }
         
         // 重新配置模型管理section

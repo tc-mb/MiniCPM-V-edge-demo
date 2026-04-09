@@ -105,4 +105,38 @@ struct MiniCPMModelConst {
     /// ANE 利用压缩包 md5
     static let mlmodelcv4_ZipFileMD5 = "150a316e49dee3da04d72039ee2ca390"
     
+    
+    // MARK: - MiniCPM-V 4.6 多模态语言模型
+    
+    /// V4.6 主模型文件名
+    static let modelv46_FileName = "minicpmv46-llm-f16.gguf"
+    
+    /// V4.6 显示名
+    static let modelv46_DisplayedName = "MiniCPM-V 4.6 LLM F16"
+    
+    
+    // MARK: - MiniCPM-V 4.6 mmproj VIT 模型
+    
+    /// V4.6 mmproj 文件名
+    static let mmprojv46_FileName = "mmproj-v46-model-f16.gguf"
+    
+    /// V4.6 mmproj 显示名
+    static let modelMMProjv46_DisplayedName = "MiniCPM-V 4.6 VPM"
+    
+    
+    // MARK: - MiniCPM-V 4.6 ANE 模块
+    
+    /// V4.6 ANE CoreML 目录名（编译后的 .mlmodelc，或 Xcode 可直接加载的 .mlpackage 包）
+    static let mlmodelcv46_DirName = "coreml_minicpmv46_vit_all_f32.mlmodelc"
+    
+    /// 在 Documents 中依次尝试的文件名（任一路径存在即作为 CoreML 路径）
+    static let mlmodelcv46_CandidateFileNames: [String] = [
+        "coreml_minicpmv46_vit_all_f32.mlmodelc",
+        "coreml_minicpmv46_vit_all_f32.mlpackage",
+        "coreml_minicpmv46_vit_all_f16.mlpackage",
+    ]
+    
+    /// V4.6 ANE 显示名
+    static let mlmodelcv46_DisplayedName = "MiniCPM-V 4.6 ANE"
+    
 }

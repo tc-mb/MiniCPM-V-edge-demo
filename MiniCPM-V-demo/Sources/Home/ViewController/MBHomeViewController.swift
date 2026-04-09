@@ -367,11 +367,11 @@ import llama
             var modelDisplayedName = ""
             
             if lastSelectedModelString == "V26MultiModel" {
-                // V-2.6 8B 多模态模型
                 modelDisplayedName = MiniCPMModelConst.modelQ4_K_MDisplayedName
             } else if lastSelectedModelString == "V4MultiModel" {
-                // V-4.0 4B 多模态模型
                 modelDisplayedName = MiniCPMModelConst.modelv4_Q4_K_M_DisplayedName
+            } else if lastSelectedModelString == "V46MultiModel" {
+                modelDisplayedName = MiniCPMModelConst.modelv46_DisplayedName
             }
             
             if !modelDisplayedName.isEmpty {

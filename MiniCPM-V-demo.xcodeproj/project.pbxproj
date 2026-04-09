@@ -39,6 +39,7 @@
 		FA7DDD7E2C537407001E61B7 /* MBLiveStreamVideoFrameManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA7DDD7D2C537407001E61B7 /* MBLiveStreamVideoFrameManager.swift */; };
 		FA812D2F2E21FC80000CE130 /* MBV26ModelDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA812D2E2E21FC80000CE130 /* MBV26ModelDetailViewController.swift */; };
 		FA812D302E21FC80000CE130 /* MBV4ModelDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA812D2D2E21FC80000CE130 /* MBV4ModelDetailViewController.swift */; };
+		FA812D312E21FC80000CE131 /* MBV46ModelDetailViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA812D2C2E21FC80000CE131 /* MBV46ModelDetailViewController.swift */; };
 		FA845F2E2C2EC20800695029 /* NSTextAttachment+MBPath.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA845F2D2C2EC20800695029 /* NSTextAttachment+MBPath.swift */; };
 		FA8511352E20DCC000748053 /* MBSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA8511322E20DCC000748053 /* MBSettingsViewController.swift */; };
 		FA8511372E20DCC000748053 /* MBSettingsTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA8511302E20DCC000748053 /* MBSettingsTableViewCell.swift */; };
@@ -50,6 +51,7 @@
 		FAA3C9742E220A7F007FAD29 /* MBV4ModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA3C9732E220A7F007FAD29 /* MBV4ModelDownloadManager.swift */; };
 		FAA3C9762E220C30007FAD29 /* MBV26ModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA3C9752E220C30007FAD29 /* MBV26ModelDownloadManager.swift */; };
 		FAAC6D1D2E223B0F00D45121 /* MiniCPMModelConst.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAC6D1C2E223B0F00D45121 /* MiniCPMModelConst.swift */; };
+		FA9AB0022F03000200E00002 /* MiniCPMV46CoreMLBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9AB0012F03000100E00001 /* MiniCPMV46CoreMLBootstrap.swift */; };
 		FAAFDFF92C37F85B00BF35BE /* debugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAFDFF82C37F85B00BF35BE /* debugLog.swift */; };
 		FABA27252E2DD9B900651C44 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = FABA27232E2DD94B00651C44 /* llama.xcframework */; };
 		FABA27262E2DD9B900651C44 /* llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = FABA27232E2DD94B00651C44 /* llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -132,6 +134,7 @@
 		FA7CC0322E26368600A480AD /* MBHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBHUD.swift; sourceTree = "<group>"; };
 		FA7D16B72C45FE6300442536 /* MBConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBConstants.swift; sourceTree = "<group>"; };
 		FA7DDD7D2C537407001E61B7 /* MBLiveStreamVideoFrameManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MBLiveStreamVideoFrameManager.swift; sourceTree = "<group>"; };
+		FA812D2C2E21FC80000CE131 /* MBV46ModelDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV46ModelDetailViewController.swift; sourceTree = "<group>"; };
 		FA812D2D2E21FC80000CE130 /* MBV4ModelDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV4ModelDetailViewController.swift; sourceTree = "<group>"; };
 		FA812D2E2E21FC80000CE130 /* MBV26ModelDetailViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV26ModelDetailViewController.swift; sourceTree = "<group>"; };
 		FA845F2D2C2EC20800695029 /* NSTextAttachment+MBPath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSTextAttachment+MBPath.swift"; sourceTree = "<group>"; };
@@ -146,6 +149,7 @@
 		FAA3C9732E220A7F007FAD29 /* MBV4ModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV4ModelDownloadManager.swift; sourceTree = "<group>"; };
 		FAA3C9752E220C30007FAD29 /* MBV26ModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV26ModelDownloadManager.swift; sourceTree = "<group>"; };
 		FAAC6D1C2E223B0F00D45121 /* MiniCPMModelConst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCPMModelConst.swift; sourceTree = "<group>"; };
+		FA9AB0012F03000100E00001 /* MiniCPMV46CoreMLBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCPMV46CoreMLBootstrap.swift; sourceTree = "<group>"; };
 		FAAFDFF82C37F85B00BF35BE /* debugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = debugLog.swift; sourceTree = "<group>"; };
 		FABA27232E2DD94B00651C44 /* llama.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = llama.xcframework; sourceTree = "<group>"; };
 		FAC283BF2C1AFD9300A4FD25 /* MiniCPM-V-demo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "MiniCPM-V-demo.entitlements"; sourceTree = "<group>"; };
@@ -414,6 +418,7 @@
 			children = (
 				FA812D2D2E21FC80000CE130 /* MBV4ModelDetailViewController.swift */,
 				FA812D2E2E21FC80000CE130 /* MBV26ModelDetailViewController.swift */,
+				FA812D2C2E21FC80000CE131 /* MBV46ModelDetailViewController.swift */,
 			);
 			path = ModelDetail;
 			sourceTree = "<group>";
@@ -528,6 +533,7 @@
 				FAE69AA82C181F4500E6D095 /* MBUtils.swift */,
 				FA49BA102C32A1DD005660C4 /* MBUtils+checkMD5.swift */,
 				FA7D16B72C45FE6300442536 /* MBConstants.swift */,
+				FA9AB0012F03000100E00001 /* MiniCPMV46CoreMLBootstrap.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -686,6 +692,7 @@
 				FA4350DD2C4A897900E94116 /* MBLiveCaptureVideoFrameManager.swift in Sources */,
 				FA812D2F2E21FC80000CE130 /* MBV26ModelDetailViewController.swift in Sources */,
 				FA812D302E21FC80000CE130 /* MBV4ModelDetailViewController.swift in Sources */,
+				FA812D312E21FC80000CE131 /* MBV46ModelDetailViewController.swift in Sources */,
 				FA1ED0A52E2259DD00370614 /* MBImageVideoViewController.swift in Sources */,
 				FAE69AA92C181F4500E6D095 /* MBUtils.swift in Sources */,
 				FAEFA8162C48BAD3009C2AEF /* SwiftyCameraMainViewController.swift in Sources */,
@@ -709,6 +716,7 @@
 				FAA3C9762E220C30007FAD29 /* MBV26ModelDownloadManager.swift in Sources */,
 				FA7517002C452A0500CFB066 /* MBVideoFrameExtractor.swift in Sources */,
 				FAAC6D1D2E223B0F00D45121 /* MiniCPMModelConst.swift in Sources */,
+				FA9AB0022F03000200E00002 /* MiniCPMV46CoreMLBootstrap.swift in Sources */,
 				FACAE97A2C40D37900C557D6 /* MBHomeViewController+SendAction.swift in Sources */,
 				FA47CD712C23F9F800A7D563 /* MBHomeViewController+LogTimer.swift in Sources */,
 				FA3D8FBD2C1FCF30003DACDA /* FFileTool.m in Sources */,
