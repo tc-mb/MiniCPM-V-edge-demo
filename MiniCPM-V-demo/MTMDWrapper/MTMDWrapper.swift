@@ -306,8 +306,9 @@ public class MTMDWrapper: ObservableObject {
                 updateGenerationState(.completed)
                 print("MTMDWrapper: 生成完成: \(fullOutput)")
                 // 清理任务引用但不重置状态，让状态保持为 completed
+                // 注意：不在这里清 KV cache，否则多轮上下文会丢。
+                // KV 的清理统一交给显式 reset()（切换模型 / 新对话入口）
                 generationTask = nil
-                mtmd_ios_clean_kv_cache(ctx)
                 return
             }
             
