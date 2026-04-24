@@ -24,18 +24,6 @@
 	<string>App需要您的同意，才能访问相册用于上传图片。</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>语音转文字。</string>
-	<key>NSUbiquitousContainers</key>
-	<dict>
-		<key>iCloud.com.tianchi.MiniCPM-V-Demo.icloud</key>
-		<dict>
-			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
-			<true/>
-			<key>NSUbiquitousContainerName</key>
-			<string>MiniCPM-V-demo</string>
-			<key>NSUbiquitousContainerSupportedFolderLevels</key>
-			<string>ANY</string>
-		</dict>
-	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

@@ -160,6 +160,7 @@ extension MBSettingsViewController: UITableViewDataSource {
     }
     
     public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        if dataArray[section].isEmpty { return 0 }
         return 40
     }
     
@@ -225,7 +226,14 @@ extension MBSettingsViewController: UITableViewDelegate {
             return
         }
         
-        // 处理模型选择逻辑 - 现在改为跳转到详情页面
+        if model.status == "disabled" {
+            let alertMessage = "\(model.title ?? "该模型")参数量较大，当前设备内存不足以运行。建议使用 iPad（6GB 以上内存）。"
+            let alert = UIAlertController(title: "设备不支持", message: alertMessage, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "我知道了", style: .default))
+            present(alert, animated: true)
+            return
+        }
+        
         if let title = model.title {
             if title == "MiniCPM-V 2.6 8B" {
                 let detailVC = MBV26ModelDetailViewController(with: mtmdWrapperExample)
@@ -302,6 +310,11 @@ extension MBSettingsViewController {
         // 获取当前选中的模型
         let currentSelectedModel = UserDefaults.standard.string(forKey: "current_selected_model")
         
+        let isIPad = UIDevice.current.userInterfaceIdiom == .pad
+        let totalRAM = ProcessInfo.processInfo.physicalMemory
+        let hasEnoughRAMFor8B = totalRAM >= 6 * 1024 * 1024 * 1024 // 6GB+
+        let deviceSupports8B = isIPad && hasEnoughRAMFor8B
+        
         // MiniCPM-V 2.6 8B
         let model1 = MBSettingsModel()
         model1.title = "MiniCPM-V 2.6 8B"
@@ -309,14 +322,15 @@ extension MBSettingsViewController {
         model1.accessoryIcon = UIImage(named: "setting_accessory_icon")
         model1.selectedIcon = UIImage(systemName: "checkmark.circle.fill")
         
-        // 检查是否已选中
-        if currentSelectedModel == "V26MultiModel" {
+        if !deviceSupports8B {
+            model1.status = "disabled"
+            let ramGB = String(format: "%.0f", Double(totalRAM) / 1024 / 1024 / 1024)
+            model1.statusString = "设备不支持（需iPad 6GB+，当前\(ramGB)GB）"
+        } else if currentSelectedModel == "V26MultiModel" {
             model1.status = "selected"
             model1.statusString = "正在使用"
-            debugLog("-->> SettingsVC: V26模型设置为选中状态")
         } else {
             model1.status = "none"
-            debugLog("-->> SettingsVC: V26模型设置为未选中状态")
         }
         
         sectionA.append(model1)
@@ -368,15 +382,14 @@ extension MBSettingsViewController {
     private func setupFeatureSettingsSection() {
         var sectionB = [MBSettingsModel]()
         
-        // 实时理解设置
-        let realtimeSetting = MBSettingsModel()
-        realtimeSetting.title = "实时理解设置"
-        realtimeSetting.icon = UIImage(systemName: "brain.head.profile")
-        realtimeSetting.accessoryIcon = UIImage(named: "setting_accessory_icon")
+        // 实时理解设置（暂未调通，暂时隐藏）
+        // let realtimeSetting = MBSettingsModel()
+        // realtimeSetting.title = "实时理解设置"
+        // realtimeSetting.icon = UIImage(systemName: "brain.head.profile")
+        // realtimeSetting.accessoryIcon = UIImage(named: "setting_accessory_icon")
+        // sectionB.append(realtimeSetting)
         
-        sectionB.append(realtimeSetting)
-        
-        // 添加到数据源
+        // 添加到数据源（空 section 不会显示）
         if dataArray.count > 1 {
             dataArray[1] = sectionB
         } else {
@@ -407,7 +420,17 @@ extension MBSettingsViewController {
     /// 刷新模型管理section
     private func refreshModelManagementSection() {
         // 获取当前选中的模型
-        let currentSelectedModel = UserDefaults.standard.string(forKey: "current_selected_model")
+        var currentSelectedModel = UserDefaults.standard.string(forKey: "current_selected_model")
+        
+        // If V2.6 was selected but device doesn't support it, clear the selection
+        let isIPad = UIDevice.current.userInterfaceIdiom == .pad
+        let totalRAM = ProcessInfo.processInfo.physicalMemory
+        let hasEnoughRAMFor8B = totalRAM >= 6 * 1024 * 1024 * 1024
+        if currentSelectedModel == "V26MultiModel" && !(isIPad && hasEnoughRAMFor8B) {
+            UserDefaults.standard.removeObject(forKey: "current_selected_model")
+            currentSelectedModel = nil
+            mtmdWrapperExample?.currentUsingModelType = .Unknown
+        }
         
         // 更新llamaState的当前模型类型
         if currentSelectedModel == "V26MultiModel" {

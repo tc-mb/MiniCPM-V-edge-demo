@@ -108,11 +108,17 @@ struct MiniCPMModelConst {
     
     // MARK: - MiniCPM-V 4.6 多模态语言模型
     
-    /// V4.6 主模型文件名
-    static let modelv46_FileName = "minicpmv46-llm-f16.gguf"
+    /// V4.6 主模型文件名（instruct 对话版，Q4_K_M 量化）
+    static let modelv46_FileName = "minicpmv46-llm-Q4_K_M.gguf"
     
     /// V4.6 显示名
-    static let modelv46_DisplayedName = "MiniCPM-V 4.6 LLM F16"
+    static let modelv46_DisplayedName = "MiniCPM-V 4.6 LLM INT4"
+
+    /// V4.6 主模型下载地址（临时中转 OSS，仅 TestFlight 测试期使用）
+    static let modelv46_Q4_K_M_URLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/minicpmv46-llm-Q4_K_M.gguf"
+
+    /// V4.6 主模型 md5
+    static let modelv46_Q4_K_M_MD5 = "50a8b46b26c282cd95b13ecd83a3af0f"
     
     
     // MARK: - MiniCPM-V 4.6 mmproj VIT 模型
@@ -122,6 +128,12 @@ struct MiniCPMModelConst {
     
     /// V4.6 mmproj 显示名
     static let modelMMProjv46_DisplayedName = "MiniCPM-V 4.6 VPM"
+
+    /// V4.6 mmproj 下载地址
+    static let mmprojv46_URLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/mmproj-v46-model-f16.gguf"
+
+    /// V4.6 mmproj md5
+    static let modelMMProjv46_MD5 = "e6ef4e3779f86c4ca76f9b8ea65f9e26"
     
     
     // MARK: - MiniCPM-V 4.6 ANE 模块
@@ -138,5 +150,14 @@ struct MiniCPMModelConst {
     
     /// V4.6 ANE 显示名
     static let mlmodelcv46_DisplayedName = "MiniCPM-V 4.6 ANE"
+
+    /// V4.6 ANE zip 文件名（下载到 Documents 后解压得到 .mlmodelc 目录）
+    static let mlmodelcv46_ZipFileName = "coreml_minicpmv46_vit_all_f32.mlmodelc.zip"
+
+    /// V4.6 ANE zip 下载地址
+    static let mlmodelcv46_ZipFileURLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/coreml_minicpmv46_vit_all_f32.mlmodelc.zip"
+
+    /// V4.6 ANE zip md5
+    static let mlmodelcv46_ZipFileMD5 = "9845f4a2f513d387ab4826a81f241f36"
     
 }

@@ -1,0 +1,550 @@
+//
+//  MBV46ModelDownloadManager.swift
+//  MiniCPM-V-demo
+//
+//  V4.6 instruct 下载管理器（仿 MBV4ModelDownloadManager，三段下载 + MD5 校验 + ANE zip 解压）
+//
+
+import Foundation
+import UIKit
+import ZipArchive
+
+/// V4.6 模型下载管理器单例
+class MBV46ModelDownloadManager: NSObject {
+    
+    // MARK: - 单例实现
+    
+    static let shared = MBV46ModelDownloadManager()
+    
+    private override init() {
+        super.init()
+    }
+    
+    // MARK: - 属性
+    
+    private var mtmdWrapperExample: MTMDWrapperExample?
+    
+    private var modelv46_Q4_K_M_Manager: MBModelDownloadHelperV2?
+    private var mmprojv46_Manager: MBModelDownloadHelperV2?
+    private var mlmodelcv46_Manager: MBModelDownloadHelperV2?
+    
+    var progressHandler: ((String, CGFloat) -> Void)?
+    var completionHandler: ((String, Bool) -> Void)?
+    var detailedProgressHandler: ((DownloadProgressInfo) -> Void)?
+    
+    // MARK: - 防重复调用机制
+    
+    private var downloadStates: [String: DownloadStatus] = [:]
+    private var downloadProgressCache: [String: DownloadProgressInfo] = [:]
+    private var downloadStartTimes: [String: Date] = [:]
+    private var lastDownloadedBytes: [String: Int64] = [:]
+    private let downloadQueue = DispatchQueue(label: "com.minicpm.v46.download", qos: .userInitiated)
+    
+    private func isDownloading(_ modelKey: String) -> Bool {
+        return downloadQueue.sync {
+            return downloadStates[modelKey] == .downloading
+        }
+    }
+    
+    private func setDownloadStatus(_ status: DownloadStatus, for modelKey: String) {
+        downloadQueue.sync {
+            downloadStates[modelKey] = status
+            if status == .downloading {
+                downloadStartTimes[modelKey] = Date()
+            }
+        }
+    }
+    
+    private func updateDownloadProgress(_ progress: CGFloat, for modelKey: String, modelName: String, downloadedBytes: Int64 = 0, totalBytes: Int64 = 0) {
+        downloadQueue.sync {
+            let currentTime = Date()
+            let startTime = downloadStartTimes[modelKey] ?? currentTime
+            let timeElapsed = currentTime.timeIntervalSince(startTime)
+            
+            var speed: Double = 0
+            if let lastBytes = lastDownloadedBytes[modelKey], timeElapsed > 0 {
+                speed = Double(downloadedBytes - lastBytes) / timeElapsed
+            }
+            lastDownloadedBytes[modelKey] = downloadedBytes
+            
+            var estimatedTimeRemaining: TimeInterval = 0
+            if speed > 0 && totalBytes > downloadedBytes {
+                estimatedTimeRemaining = Double(totalBytes - downloadedBytes) / speed
+            }
+            
+            let progressInfo = DownloadProgressInfo(
+                modelName: modelName,
+                status: downloadStates[modelKey] ?? .notStarted,
+                progress: progress,
+                downloadedBytes: downloadedBytes,
+                totalBytes: totalBytes,
+                speed: speed,
+                estimatedTimeRemaining: estimatedTimeRemaining
+            )
+            
+            downloadProgressCache[modelKey] = progressInfo
+            detailedProgressHandler?(progressInfo)
+        }
+    }
+    
+    // MARK: - 公共方法
+    
+    func setupDownloadManager(with wrapper: MTMDWrapperExample) {
+        self.mtmdWrapperExample = wrapper
+        setupModels()
+    }
+    
+    private func setupModels() {
+        guard let mtmdWrapperExample = mtmdWrapperExample else { return }
+        
+        modelv46_Q4_K_M_Manager = MBModelDownloadHelperV2(
+            wrapper: mtmdWrapperExample,
+            modelName: MiniCPMModelConst.modelv46_FileName,
+            modelUrl: MiniCPMModelConst.modelv46_Q4_K_M_URLString,
+            filename: MiniCPMModelConst.modelv46_FileName,
+            backupModelUrl: nil
+        )
+        
+        mmprojv46_Manager = MBModelDownloadHelperV2(
+            wrapper: mtmdWrapperExample,
+            modelName: MiniCPMModelConst.mmprojv46_FileName,
+            modelUrl: MiniCPMModelConst.mmprojv46_URLString,
+            filename: MiniCPMModelConst.mmprojv46_FileName,
+            backupModelUrl: nil
+        )
+        
+        mlmodelcv46_Manager = MBModelDownloadHelperV2(
+            wrapper: mtmdWrapperExample,
+            modelName: MiniCPMModelConst.mlmodelcv46_ZipFileName,
+            modelUrl: MiniCPMModelConst.mlmodelcv46_ZipFileURLString,
+            filename: MiniCPMModelConst.mlmodelcv46_ZipFileName,
+            backupModelUrl: nil
+        )
+        
+        bootstrapStatusFromDisk()
+        restoreDownloadProgress()
+    }
+
+    /// 启动时用磁盘文件存在情况预置 Helper 的 status，避免 Cell 一开始都显示"未下载"
+    private func bootstrapStatusFromDisk() {
+        let docs = getDocumentsDirectory()
+        let fm = FileManager.default
+        
+        let llmPath = docs.appendingPathComponent(MiniCPMModelConst.modelv46_FileName).path
+        if fm.fileExists(atPath: llmPath) {
+            modelv46_Q4_K_M_Manager?.status = "downloaded"
+        }
+        
+        let mmprojPath = docs.appendingPathComponent(MiniCPMModelConst.mmprojv46_FileName).path
+        if fm.fileExists(atPath: mmprojPath) {
+            mmprojv46_Manager?.status = "downloaded"
+        }
+        
+        let aneReady = MiniCPMModelConst.mlmodelcv46_CandidateFileNames.contains { name in
+            fm.fileExists(atPath: docs.appendingPathComponent(name).path)
+        }
+        let zipPath = docs.appendingPathComponent(MiniCPMModelConst.mlmodelcv46_ZipFileName).path
+        if aneReady || fm.fileExists(atPath: zipPath) {
+            mlmodelcv46_Manager?.status = "downloaded"
+        }
+    }
+    
+    private func restoreDownloadProgress() {
+        guard let info = FDownLoaderManager.shareInstance().downLoaderInfo else { return }
+        
+        let llmKey = String(stringLiteral: MiniCPMModelConst.modelv46_Q4_K_M_URLString).md5() ?? ""
+        if let obj = info[llmKey] as? FDownLoader, obj.state == .downLoading {
+            downloadModelv46_Q4_K_M()
+        }
+        
+        let mmprojKey = String(stringLiteral: MiniCPMModelConst.mmprojv46_URLString).md5() ?? ""
+        if let obj = info[mmprojKey] as? FDownLoader, obj.state == .downLoading {
+            downloadMMProjv46()
+        }
+        
+        let aneKey = String(stringLiteral: MiniCPMModelConst.mlmodelcv46_ZipFileURLString).md5() ?? ""
+        if let obj = info[aneKey] as? FDownLoader, obj.state == .downLoading {
+            downloadMLModelcv46()
+        }
+    }
+    
+    // MARK: - 下载方法
+    
+    func downloadModelv46_Q4_K_M() {
+        let modelKey = "v46_main_model"
+        
+        guard !isDownloading(modelKey) else {
+            debugLog("-->> V4.6 主模型正在下载中，忽略重复调用")
+            return
+        }
+        if getModelv46_Q4_K_M_Status() == "downloaded" {
+            debugLog("-->> V4.6 主模型已下载完成")
+            return
+        }
+        
+        setDownloadStatus(.downloading, for: modelKey)
+        
+        modelv46_Q4_K_M_Manager?.downloadV2(completionBlock: { [weak self] status, progress in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                if progress >= 1 {
+                    self.setDownloadStatus(.completed, for: modelKey)
+                    self.verifyModelv46_Q4_K_M_MD5()
+                    self.progressHandler?(MiniCPMModelConst.modelv46_DisplayedName, 1.0)
+                    self.completionHandler?(MiniCPMModelConst.modelv46_DisplayedName, true)
+                    self.updateDownloadProgress(1.0, for: modelKey, modelName: MiniCPMModelConst.modelv46_DisplayedName)
+                } else {
+                    if status == "failed" {
+                        self.setDownloadStatus(.failed, for: modelKey)
+                        self.progressHandler?(MiniCPMModelConst.modelv46_DisplayedName + "下载失败", -1)
+                        self.completionHandler?(MiniCPMModelConst.modelv46_DisplayedName, false)
+                    } else {
+                        self.progressHandler?(MiniCPMModelConst.modelv46_DisplayedName, progress)
+                        self.updateDownloadProgress(progress, for: modelKey, modelName: MiniCPMModelConst.modelv46_DisplayedName)
+                    }
+                }
+            }
+        })
+    }
+    
+    func downloadMMProjv46() {
+        let modelKey = "v46_mmproj_model"
+        
+        guard !isDownloading(modelKey) else {
+            debugLog("-->> V4.6 VIT 模型正在下载中，忽略重复调用")
+            return
+        }
+        if getMMProjv46_Status() == "downloaded" {
+            debugLog("-->> V4.6 VIT 模型已下载完成")
+            return
+        }
+        
+        setDownloadStatus(.downloading, for: modelKey)
+        
+        mmprojv46_Manager?.downloadV2(completionBlock: { [weak self] status, progress in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                if progress >= 1 {
+                    self.setDownloadStatus(.completed, for: modelKey)
+                    self.verifyMMProjv46_MD5()
+                    self.progressHandler?(MiniCPMModelConst.modelMMProjv46_DisplayedName, 1.0)
+                    self.completionHandler?(MiniCPMModelConst.modelMMProjv46_DisplayedName, true)
+                    self.updateDownloadProgress(1.0, for: modelKey, modelName: MiniCPMModelConst.modelMMProjv46_DisplayedName)
+                } else {
+                    if status == "failed" {
+                        self.setDownloadStatus(.failed, for: modelKey)
+                        self.progressHandler?(MiniCPMModelConst.modelMMProjv46_DisplayedName + "下载失败", -1)
+                        self.completionHandler?(MiniCPMModelConst.modelMMProjv46_DisplayedName, false)
+                    } else {
+                        self.progressHandler?(MiniCPMModelConst.modelMMProjv46_DisplayedName, progress)
+                        self.updateDownloadProgress(progress, for: modelKey, modelName: MiniCPMModelConst.modelMMProjv46_DisplayedName)
+                    }
+                }
+            }
+        })
+    }
+    
+    func downloadMLModelcv46() {
+        let modelKey = "v46_ane_module"
+        
+        guard !isDownloading(modelKey) else {
+            debugLog("-->> V4.6 ANE 模块正在下载中，忽略重复调用")
+            return
+        }
+        if getMLModelcv46_Status() == "downloaded" {
+            debugLog("-->> V4.6 ANE 模块已下载完成")
+            return
+        }
+        
+        setDownloadStatus(.downloading, for: modelKey)
+        
+        mlmodelcv46_Manager?.downloadV2(completionBlock: { [weak self] status, progress in
+            guard let self = self else { return }
+            
+            DispatchQueue.main.async {
+                if progress >= 1 {
+                    self.setDownloadStatus(.completed, for: modelKey)
+                    self.verifyAndExtractMLModelcv46()
+                    self.progressHandler?(MiniCPMModelConst.mlmodelcv46_DisplayedName, 1.0)
+                    self.completionHandler?(MiniCPMModelConst.mlmodelcv46_DisplayedName, true)
+                    self.updateDownloadProgress(1.0, for: modelKey, modelName: MiniCPMModelConst.mlmodelcv46_DisplayedName)
+                } else {
+                    if status == "failed" {
+                        self.setDownloadStatus(.failed, for: modelKey)
+                        self.progressHandler?(MiniCPMModelConst.mlmodelcv46_DisplayedName + "下载失败", -1)
+                        self.completionHandler?(MiniCPMModelConst.mlmodelcv46_DisplayedName, false)
+                    } else {
+                        self.progressHandler?(MiniCPMModelConst.mlmodelcv46_DisplayedName, progress)
+                        self.updateDownloadProgress(progress, for: modelKey, modelName: MiniCPMModelConst.mlmodelcv46_DisplayedName)
+                    }
+                }
+            }
+        })
+    }
+    
+    // MARK: - 一键下载
+
+    /// 同时启动 LLM / VPM / ANE 三段下载（互不阻塞）
+    func downloadAll() {
+        debugLog("-->> V4.6 一键下载：同时拉起 LLM + VPM + ANE")
+        downloadModelv46_Q4_K_M()
+        downloadMMProjv46()
+        downloadMLModelcv46()
+    }
+
+    /// 三段文件的综合进度（按预估字节加权），0..1
+    func overallProgress() -> CGFloat {
+        // 预估字节数（与服务器 Content-Length 一致）
+        let llmBytes: Int64    = 529_100_256
+        let mmprojBytes: Int64 = 1_097_457_216
+        let aneBytes: Int64    = 1_030_316_868
+        let total = llmBytes + mmprojBytes + aneBytes
+
+        let llmProg    = progress(for: "v46_main_model",  downloadedWhenDone: llmBytes)
+        let mmprojProg = progress(for: "v46_mmproj_model", downloadedWhenDone: mmprojBytes)
+        let aneProg    = progress(for: "v46_ane_module",   downloadedWhenDone: aneBytes)
+
+        let weighted = llmProg * CGFloat(llmBytes)
+                     + mmprojProg * CGFloat(mmprojBytes)
+                     + aneProg * CGFloat(aneBytes)
+        return weighted / CGFloat(total)
+    }
+
+    private func progress(for modelKey: String, downloadedWhenDone: Int64) -> CGFloat {
+        let status: String
+        switch modelKey {
+        case "v46_main_model":   status = getModelv46_Q4_K_M_Status()
+        case "v46_mmproj_model": status = getMMProjv46_Status()
+        case "v46_ane_module":   status = getMLModelcv46_Status()
+        default: status = "download"
+        }
+        if status == "downloaded" { return 1.0 }
+        if let info = downloadQueue.sync(execute: { downloadProgressCache[modelKey] }) {
+            return info.progress
+        }
+        return 0
+    }
+
+    // MARK: - 进度查询
+    
+    func getDownloadProgress(for modelKey: String) -> DownloadProgressInfo? {
+        return downloadQueue.sync { downloadProgressCache[modelKey] }
+    }
+    
+    func getAllDownloadProgress() -> [String: DownloadProgressInfo] {
+        return downloadQueue.sync { downloadProgressCache }
+    }
+    
+    func getDownloadStatus(for modelKey: String) -> DownloadStatus {
+        return downloadQueue.sync { downloadStates[modelKey] ?? .notStarted }
+    }
+    
+    func getAllDownloadStatus() -> [String: DownloadStatus] {
+        return downloadQueue.sync { downloadStates }
+    }
+    
+    // MARK: - MD5 校验
+    
+    private func verifyModelv46_Q4_K_M_MD5() {
+        let fileURL = getDocumentsDirectory().appendingPathComponent(MiniCPMModelConst.modelv46_FileName)
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        
+        if let checksum = MBUtils.md5(for: fileURL) {
+            debugLog("-->> V4.6 主模型 实际 MD5: \(checksum)")
+            debugLog("-->> V4.6 主模型 期望 MD5: \(MiniCPMModelConst.modelv46_Q4_K_M_MD5)")
+            
+            if checksum == MiniCPMModelConst.modelv46_Q4_K_M_MD5 {
+                debugLog("-->> V4.6 主模型 MD5 校验成功")
+                modelv46_Q4_K_M_Manager?.status = "downloaded"
+            } else {
+                debugLog("-->> V4.6 主模型 MD5 校验失败")
+                modelv46_Q4_K_M_Manager?.status = "download"
+                deleteModelv46_Q4_K_M()
+            }
+        } else {
+            debugLog("-->> V4.6 主模型 MD5 计算失败")
+            modelv46_Q4_K_M_Manager?.status = "download"
+            deleteModelv46_Q4_K_M()
+        }
+    }
+    
+    private func verifyMMProjv46_MD5() {
+        let fileURL = getDocumentsDirectory().appendingPathComponent(MiniCPMModelConst.mmprojv46_FileName)
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        
+        if let checksum = MBUtils.md5(for: fileURL) {
+            debugLog("-->> V4.6 VIT 模型 实际 MD5: \(checksum)")
+            debugLog("-->> V4.6 VIT 模型 期望 MD5: \(MiniCPMModelConst.modelMMProjv46_MD5)")
+            
+            if checksum == MiniCPMModelConst.modelMMProjv46_MD5 {
+                debugLog("-->> V4.6 VIT 模型 MD5 校验成功")
+                mmprojv46_Manager?.status = "downloaded"
+            } else {
+                debugLog("-->> V4.6 VIT 模型 MD5 校验失败")
+                mmprojv46_Manager?.status = "download"
+                deleteMMProjv46()
+            }
+        } else {
+            debugLog("-->> V4.6 VIT 模型 MD5 计算失败")
+            mmprojv46_Manager?.status = "download"
+            deleteMMProjv46()
+        }
+    }
+    
+    private func verifyAndExtractMLModelcv46() {
+        let fileURL = getDocumentsDirectory().appendingPathComponent(MiniCPMModelConst.mlmodelcv46_ZipFileName)
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        
+        guard let checksum = MBUtils.md5(for: fileURL) else {
+            debugLog("-->> V4.6 ANE 模块 MD5 计算失败")
+            mlmodelcv46_Manager?.status = "download"
+            deleteMLModelcv46()
+            return
+        }
+        
+        debugLog("-->> V4.6 ANE 模块 实际 MD5: \(checksum)")
+        debugLog("-->> V4.6 ANE 模块 期望 MD5: \(MiniCPMModelConst.mlmodelcv46_ZipFileMD5)")
+        
+        guard checksum == MiniCPMModelConst.mlmodelcv46_ZipFileMD5 else {
+            debugLog("-->> V4.6 ANE 模块 MD5 校验失败")
+            mlmodelcv46_Manager?.status = "download"
+            deleteMLModelcv46()
+            return
+        }
+        
+        let destPath = getDocumentsDirectory().path
+        var error: NSError?
+        SSZipArchive.unzipFile(
+            atPath: fileURL.path,
+            toDestination: destPath,
+            preserveAttributes: true,
+            overwrite: true,
+            password: nil,
+            error: &error,
+            delegate: nil
+        )
+        
+        if let error = error {
+            debugLog("-->> V4.6 ANE 模块解压失败: \(error.localizedDescription)")
+            mlmodelcv46_Manager?.status = "download"
+            deleteMLModelcv46()
+        } else {
+            debugLog("-->> V4.6 ANE 模块解压成功")
+            mlmodelcv46_Manager?.status = "downloaded"
+        }
+    }
+    
+    // MARK: - 删除方法
+    
+    func deleteModelv46_Q4_K_M() {
+        let fileURL = getDocumentsDirectory().appendingPathComponent(MiniCPMModelConst.modelv46_FileName)
+        do {
+            try FileManager.default.removeItem(at: fileURL)
+            modelv46_Q4_K_M_Manager?.status = "download"
+            setDownloadStatus(.notStarted, for: "v46_main_model")
+            debugLog("-->> V4.6 主模型删除成功")
+        } catch {
+            debugLog("-->> V4.6 主模型删除失败: \(error.localizedDescription)")
+        }
+    }
+    
+    func deleteMMProjv46() {
+        let fileURL = getDocumentsDirectory().appendingPathComponent(MiniCPMModelConst.mmprojv46_FileName)
+        do {
+            try FileManager.default.removeItem(at: fileURL)
+            mmprojv46_Manager?.status = "download"
+            setDownloadStatus(.notStarted, for: "v46_mmproj_model")
+            debugLog("-->> V4.6 VIT 模型删除成功")
+        } catch {
+            debugLog("-->> V4.6 VIT 模型删除失败: \(error.localizedDescription)")
+        }
+    }
+    
+    func deleteMLModelcv46() {
+        let fileURL = getDocumentsDirectory().appendingPathComponent(MiniCPMModelConst.mlmodelcv46_ZipFileName)
+        do {
+            try FileManager.default.removeItem(at: fileURL)
+            mlmodelcv46_Manager?.status = "download"
+            setDownloadStatus(.notStarted, for: "v46_ane_module")
+            debugLog("-->> V4.6 ANE 模块 zip 删除成功")
+        } catch {
+            debugLog("-->> V4.6 ANE 模块 zip 删除失败: \(error.localizedDescription)")
+        }
+        // 同时尝试删除已解压的 mlmodelc 目录
+        for candidate in MiniCPMModelConst.mlmodelcv46_CandidateFileNames {
+            let dirURL = getDocumentsDirectory().appendingPathComponent(candidate)
+            if FileManager.default.fileExists(atPath: dirURL.path) {
+                try? FileManager.default.removeItem(at: dirURL)
+            }
+        }
+    }
+    
+    // MARK: - 状态查询
+    
+    func getModelv46_Q4_K_M_Status() -> String {
+        return modelv46_Q4_K_M_Manager?.status ?? "download"
+    }
+    
+    func getMMProjv46_Status() -> String {
+        return mmprojv46_Manager?.status ?? "download"
+    }
+    
+    func getMLModelcv46_Status() -> String {
+        return mlmodelcv46_Manager?.status ?? "download"
+    }
+    
+    func hasAnyModelDownloading() -> Bool {
+        return downloadQueue.sync { downloadStates.values.contains(.downloading) }
+    }
+    
+    // MARK: - 工具方法
+    
+    private func getDocumentsDirectory() -> URL {
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+    
+    func pauseAllDownloads() {
+        FDownLoaderManager.shareInstance().pauseAll()
+        downloadQueue.sync {
+            for key in downloadStates.keys where downloadStates[key] == .downloading {
+                downloadStates[key] = .paused
+            }
+        }
+    }
+    
+    func resumeAllDownloads() {
+        FDownLoaderManager.shareInstance().resumeAll()
+        downloadQueue.sync {
+            for key in downloadStates.keys where downloadStates[key] == .paused {
+                downloadStates[key] = .downloading
+            }
+        }
+    }
+    
+    func cancelAllDownloads() {
+        FDownLoaderManager.shareInstance().downLoaderInfo.removeAllObjects()
+        downloadQueue.sync {
+            downloadStates.removeAll()
+            downloadProgressCache.removeAll()
+            downloadStartTimes.removeAll()
+            lastDownloadedBytes.removeAll()
+        }
+    }
+    
+    func resetDownloadStates() {
+        downloadQueue.sync {
+            downloadStates.removeAll()
+            downloadProgressCache.removeAll()
+            downloadStartTimes.removeAll()
+            lastDownloadedBytes.removeAll()
+        }
+    }
+    
+    // MARK: - 公共访问
+    
+    var mainModelManager: MBModelDownloadHelperV2? { modelv46_Q4_K_M_Manager }
+    var vitModelManager: MBModelDownloadHelperV2? { mmprojv46_Manager }
+    var aneModelManager: MBModelDownloadHelperV2? { mlmodelcv46_Manager }
+}

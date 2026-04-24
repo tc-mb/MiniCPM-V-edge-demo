@@ -494,13 +494,13 @@ import llama
             make.right.equalTo(self.sendButton.snp.left).offset(-16)
         }
 
-        // 实时捕获视频 button
-        self.inputRoundCornerView.addSubview(self.captureVideoButton)
-        self.captureVideoButton.snp.makeConstraints { make in
-            make.bottom.equalTo(-14)
-            make.width.height.equalTo(40)
-            make.right.equalTo(self.chooseImageButton.snp.left).offset(-16)
-        }
+        // 实时捕获视频 button（实时理解功能暂未调通，暂时隐藏）
+        // self.inputRoundCornerView.addSubview(self.captureVideoButton)
+        // self.captureVideoButton.snp.makeConstraints { make in
+        //     make.bottom.equalTo(-14)
+        //     make.width.height.equalTo(40)
+        //     make.right.equalTo(self.chooseImageButton.snp.left).offset(-16)
+        // }
 
         /// 免责声明
         self.inputContainerView.addSubview(bottomDisclaimerLabel)

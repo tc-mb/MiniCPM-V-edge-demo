@@ -50,6 +50,7 @@
 		FAA2DE3B2E22845400A41C8D /* UIColor+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA2DE3A2E22845400A41C8D /* UIColor+Extensions.swift */; };
 		FAA3C9742E220A7F007FAD29 /* MBV4ModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA3C9732E220A7F007FAD29 /* MBV4ModelDownloadManager.swift */; };
 		FAA3C9762E220C30007FAD29 /* MBV26ModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA3C9752E220C30007FAD29 /* MBV26ModelDownloadManager.swift */; };
+		FAA3C9782E220C30007FAD29 /* MBV46ModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA3C9772E220C30007FAD29 /* MBV46ModelDownloadManager.swift */; };
 		FAAC6D1D2E223B0F00D45121 /* MiniCPMModelConst.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAC6D1C2E223B0F00D45121 /* MiniCPMModelConst.swift */; };
 		FA9AB0022F03000200E00002 /* MiniCPMV46CoreMLBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9AB0012F03000100E00001 /* MiniCPMV46CoreMLBootstrap.swift */; };
 		FAAFDFF92C37F85B00BF35BE /* debugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAFDFF82C37F85B00BF35BE /* debugLog.swift */; };
@@ -148,6 +149,7 @@
 		FAA2DE3A2E22845400A41C8D /* UIColor+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIColor+Extensions.swift"; sourceTree = "<group>"; };
 		FAA3C9732E220A7F007FAD29 /* MBV4ModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV4ModelDownloadManager.swift; sourceTree = "<group>"; };
 		FAA3C9752E220C30007FAD29 /* MBV26ModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV26ModelDownloadManager.swift; sourceTree = "<group>"; };
+		FAA3C9772E220C30007FAD29 /* MBV46ModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV46ModelDownloadManager.swift; sourceTree = "<group>"; };
 		FAAC6D1C2E223B0F00D45121 /* MiniCPMModelConst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCPMModelConst.swift; sourceTree = "<group>"; };
 		FA9AB0012F03000100E00001 /* MiniCPMV46CoreMLBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCPMV46CoreMLBootstrap.swift; sourceTree = "<group>"; };
 		FAAFDFF82C37F85B00BF35BE /* debugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = debugLog.swift; sourceTree = "<group>"; };
@@ -460,6 +462,7 @@
 			children = (
 				FAA3C9732E220A7F007FAD29 /* MBV4ModelDownloadManager.swift */,
 				FAA3C9752E220C30007FAD29 /* MBV26ModelDownloadManager.swift */,
+				FAA3C9772E220C30007FAD29 /* MBV46ModelDownloadManager.swift */,
 			);
 			path = DownloadManager;
 			sourceTree = "<group>";
@@ -714,6 +717,7 @@
 				FAAFDFF92C37F85B00BF35BE /* debugLog.swift in Sources */,
 				FA35EE752C4901D30099EDC0 /* MBHomeViewController+CaptureVideo.swift in Sources */,
 				FAA3C9762E220C30007FAD29 /* MBV26ModelDownloadManager.swift in Sources */,
+				FAA3C9782E220C30007FAD29 /* MBV46ModelDownloadManager.swift in Sources */,
 				FA7517002C452A0500CFB066 /* MBVideoFrameExtractor.swift in Sources */,
 				FAAC6D1D2E223B0F00D45121 /* MiniCPMModelConst.swift in Sources */,
 				FA9AB0022F03000200E00002 /* MiniCPMV46CoreMLBootstrap.swift in Sources */,
@@ -881,7 +885,7 @@
 				CODE_SIGN_ENTITLEMENTS = "MiniCPM-V-demo/MiniCPM-V-demo.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.1;
+				CURRENT_PROJECT_VERSION = 1.3;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = VGXUYC2C5K;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -915,7 +919,7 @@
 					"$(SDKROOT)/usr/lib/swift",
 				);
 				MARKETING_VERSION = 1.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.tianchi.MiniCPM-V-Demo";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tianchi.minicpmvdemo";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -936,7 +940,7 @@
 				CODE_SIGN_ENTITLEMENTS = "MiniCPM-V-demo/MiniCPM-V-demo.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.1;
+				CURRENT_PROJECT_VERSION = 1.3;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = VGXUYC2C5K;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -970,7 +974,7 @@
 					"$(SDKROOT)/usr/lib/swift",
 				);
 				MARKETING_VERSION = 1.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.tianchi.MiniCPM-V-Demo";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tianchi.minicpmvdemo";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;

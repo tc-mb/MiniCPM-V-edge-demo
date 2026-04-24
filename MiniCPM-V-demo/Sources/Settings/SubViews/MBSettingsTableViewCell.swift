@@ -114,8 +114,29 @@ class MBSettingsTableViewCell: UITableViewCell {
         switchControl.isHidden = true
         
         iconImageView.image = model.icon
-        iconImageView.tintColor = .black
         titleLabel.text = model.title
+        
+        if model.status == "disabled" {
+            iconImageView.tintColor = .lightGray
+            titleLabel.textColor = .lightGray
+            statusLabel.text = model.statusString
+            statusLabel.textColor = .lightGray
+            statusLabel.font = .systemFont(ofSize: 11, weight: .regular)
+            statusLabel.isHidden = false
+            accessoryImageView.isHidden = true
+            statusLabel.snp.remakeConstraints { make in
+                make.centerY.equalTo(contentView)
+                make.width.equalTo(200)
+                make.right.equalTo(-12 - gap)
+                make.height.equalTo(16)
+            }
+            return
+        }
+        
+        iconImageView.tintColor = .black
+        titleLabel.textColor = .black
+        statusLabel.textColor = UIColor.mb_color(with: "#007AFF")
+        statusLabel.font = .systemFont(ofSize: 12, weight: .medium)
         
         // 根据模型类型配置不同的显示
         if model.isSwitchEnabled {
