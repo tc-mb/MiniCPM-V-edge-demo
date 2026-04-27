@@ -159,7 +159,7 @@ import llama
 
     private func currentButtonState() -> MainButtonState {
         if checkAllModelsDownloaded() { return .ready }
-        if downloadManager.hasAnyModelDownloading() { return .downloading }
+        if downloadManager.hasAnyDownloadActive() { return .downloading }
         return .needsDownload
     }
     
@@ -449,7 +449,9 @@ extension MBV46ModelDetailViewController {
     }
     
     /// LLM + VPM + ANE 全部就绪才允许使用
+    /// 调用前先按磁盘 reconcile，避免 helper.status 因 callback race 卡住与磁盘不一致
     private func checkAllModelsDownloaded() -> Bool {
+        downloadManager.reconcileStatusFromDisk()
         return downloadManager.getModelv46_Q4_K_M_Status() == "downloaded" &&
                downloadManager.getMMProjv46_Status()       == "downloaded" &&
                downloadManager.getMLModelcv46_Status()     == "downloaded"

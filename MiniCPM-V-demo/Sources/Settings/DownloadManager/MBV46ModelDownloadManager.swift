@@ -121,32 +121,48 @@ class MBV46ModelDownloadManager: NSObject {
             backupModelUrl: nil
         )
         
-        bootstrapStatusFromDisk()
+        reconcileStatusFromDisk()
         restoreDownloadProgress()
     }
 
-    /// 启动时用磁盘文件存在情况预置 Helper 的 status，避免 Cell 一开始都显示"未下载"
-    private func bootstrapStatusFromDisk() {
+    /// 用磁盘上的文件存在情况强制 reconcile helper.status。
+    /// 每次 button state 计算前都会调一次，避免 callback race 导致 status 卡住。
+    /// - LLM / mmproj：Documents 下对应 gguf 文件存在即视为 downloaded
+    /// - ANE：必须**解压后的 .mlmodelc/.mlpackage 目录存在且非空**，仅 zip 残留不算 downloaded
+    func reconcileStatusFromDisk() {
         let docs = getDocumentsDirectory()
         let fm = FileManager.default
-        
+
         let llmPath = docs.appendingPathComponent(MiniCPMModelConst.modelv46_FileName).path
         if fm.fileExists(atPath: llmPath) {
             modelv46_Q4_K_M_Manager?.status = "downloaded"
         }
-        
+
         let mmprojPath = docs.appendingPathComponent(MiniCPMModelConst.mmprojv46_FileName).path
         if fm.fileExists(atPath: mmprojPath) {
             mmprojv46_Manager?.status = "downloaded"
         }
-        
-        let aneReady = MiniCPMModelConst.mlmodelcv46_CandidateFileNames.contains { name in
-            fm.fileExists(atPath: docs.appendingPathComponent(name).path)
-        }
-        let zipPath = docs.appendingPathComponent(MiniCPMModelConst.mlmodelcv46_ZipFileName).path
-        if aneReady || fm.fileExists(atPath: zipPath) {
+
+        if isMLModelcReady() {
             mlmodelcv46_Manager?.status = "downloaded"
         }
+    }
+
+    /// ANE 模型是否真的就绪：解压后的 mlmodelc/mlpackage 目录存在且非空
+    private func isMLModelcReady() -> Bool {
+        let docs = getDocumentsDirectory()
+        let fm = FileManager.default
+        for name in MiniCPMModelConst.mlmodelcv46_CandidateFileNames {
+            let dirURL = docs.appendingPathComponent(name)
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: dirURL.path, isDirectory: &isDir), isDir.boolValue else {
+                continue
+            }
+            if let contents = try? fm.contentsOfDirectory(atPath: dirURL.path), !contents.isEmpty {
+                return true
+            }
+        }
+        return false
     }
     
     private func restoreDownloadProgress() {
@@ -287,8 +303,10 @@ class MBV46ModelDownloadManager: NSObject {
     // MARK: - 一键下载
 
     /// 同时启动 LLM / VPM / ANE 三段下载（互不阻塞）
+    /// 已经在磁盘上的子模型会因 status == "downloaded" 自动跳过
     func downloadAll() {
-        debugLog("-->> V4.6 一键下载：同时拉起 LLM + VPM + ANE")
+        reconcileStatusFromDisk()
+        debugLog("-->> V4.6 一键下载：同时拉起 LLM + VPM + ANE（已就绪的会自动跳过）")
         downloadModelv46_Q4_K_M()
         downloadMMProjv46()
         downloadMLModelcv46()
@@ -358,6 +376,7 @@ class MBV46ModelDownloadManager: NSObject {
             if checksum == MiniCPMModelConst.modelv46_Q4_K_M_MD5 {
                 debugLog("-->> V4.6 主模型 MD5 校验成功")
                 modelv46_Q4_K_M_Manager?.status = "downloaded"
+                setDownloadStatus(.completed, for: "v46_main_model")
             } else {
                 debugLog("-->> V4.6 主模型 MD5 校验失败")
                 modelv46_Q4_K_M_Manager?.status = "download"
@@ -381,6 +400,7 @@ class MBV46ModelDownloadManager: NSObject {
             if checksum == MiniCPMModelConst.modelMMProjv46_MD5 {
                 debugLog("-->> V4.6 VIT 模型 MD5 校验成功")
                 mmprojv46_Manager?.status = "downloaded"
+                setDownloadStatus(.completed, for: "v46_mmproj_model")
             } else {
                 debugLog("-->> V4.6 VIT 模型 MD5 校验失败")
                 mmprojv46_Manager?.status = "download"
@@ -430,10 +450,26 @@ class MBV46ModelDownloadManager: NSObject {
             debugLog("-->> V4.6 ANE 模块解压失败: \(error.localizedDescription)")
             mlmodelcv46_Manager?.status = "download"
             deleteMLModelcv46()
-        } else {
-            debugLog("-->> V4.6 ANE 模块解压成功")
-            mlmodelcv46_Manager?.status = "downloaded"
+            return
         }
+
+        guard isMLModelcReady() else {
+            debugLog("-->> V4.6 ANE 模块解压后目录为空或缺失，视为失败")
+            mlmodelcv46_Manager?.status = "download"
+            deleteMLModelcv46()
+            return
+        }
+
+        do {
+            try FileManager.default.removeItem(at: fileURL)
+            debugLog("-->> V4.6 ANE 模块 zip 已删除（解压后不再需要）")
+        } catch {
+            debugLog("-->> V4.6 ANE 模块 zip 删除失败: \(error.localizedDescription)")
+        }
+
+        debugLog("-->> V4.6 ANE 模块解压成功")
+        mlmodelcv46_Manager?.status = "downloaded"
+        setDownloadStatus(.completed, for: "v46_ane_module")
     }
     
     // MARK: - 删除方法
@@ -497,6 +533,31 @@ class MBV46ModelDownloadManager: NSObject {
     
     func hasAnyModelDownloading() -> Bool {
         return downloadQueue.sync { downloadStates.values.contains(.downloading) }
+    }
+
+    /// 比 hasAnyModelDownloading 更可靠：先按磁盘 reconcile，再判断"还有未完成的下载任务"。
+    /// 已经在磁盘上落地的 key 即使 downloadStates 里残留 .downloading 也会被忽略，
+    /// 解决"全部下载完成但 helper.status 没及时切到 downloaded，按钮卡在下载中 100%"。
+    func hasAnyDownloadActive() -> Bool {
+        reconcileStatusFromDisk()
+
+        let mainDone = (modelv46_Q4_K_M_Manager?.status == "downloaded")
+        let mmprojDone = (mmprojv46_Manager?.status == "downloaded")
+        let aneDone = (mlmodelcv46_Manager?.status == "downloaded")
+
+        return downloadQueue.sync {
+            for (key, state) in downloadStates {
+                guard state == .downloading || state == .paused else { continue }
+                switch key {
+                case "v46_main_model":   if mainDone   { continue }
+                case "v46_mmproj_model": if mmprojDone { continue }
+                case "v46_ane_module":   if aneDone    { continue }
+                default: break
+                }
+                return true
+            }
+            return false
+        }
     }
     
     // MARK: - 工具方法
