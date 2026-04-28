@@ -12,12 +12,7 @@ import UIKit
 extension MBHomeViewController {
     
     // MARK:  - 顶导 点击 事件
-    
-    /// 点击了 logo
-    @objc func navImageLogoTapped() {
-        
-    }
-    
+
     /// 去到模型设置页
     @objc func settingButtonTapped() {
 
@@ -36,6 +31,12 @@ extension MBHomeViewController {
         }
     }
     
+    /// 跳转教程页
+    @objc func tutorialButtonTapped() {
+        let vc = MBTutorialViewController()
+        self.navigationController?.pushViewController(vc, animated: true)
+    }
+
     /// delete nav item clicked
     @objc func deleteButtonTapped() {
 

@@ -227,7 +227,9 @@ extension MBSettingsViewController: UITableViewDelegate {
         }
         
         if model.status == "disabled" {
-            let alertMessage = "\(model.title ?? "该模型")参数量较大，当前设备内存不足以运行。建议使用 iPad（6GB 以上内存）。"
+            let totalRAM = ProcessInfo.processInfo.physicalMemory
+            let ramGB = String(format: "%.0f", Double(totalRAM) / 1024 / 1024 / 1024)
+            let alertMessage = "\(model.title ?? "该模型")参数量较大，当前设备内存不足（需 12 GB 以上，当前 \(ramGB) GB）。"
             let alert = UIAlertController(title: "设备不支持", message: alertMessage, preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "我知道了", style: .default))
             present(alert, animated: true)
@@ -310,11 +312,9 @@ extension MBSettingsViewController {
         // 获取当前选中的模型
         let currentSelectedModel = UserDefaults.standard.string(forKey: "current_selected_model")
         
-        let isIPad = UIDevice.current.userInterfaceIdiom == .pad
         let totalRAM = ProcessInfo.processInfo.physicalMemory
-        let hasEnoughRAMFor8B = totalRAM >= 6 * 1024 * 1024 * 1024 // 6GB+
-        let deviceSupports8B = isIPad && hasEnoughRAMFor8B
-        
+        let deviceSupports8B = totalRAM >= 12 * 1024 * 1024 * 1024 // 需要 12 GB+ 内存
+
         // MiniCPM-V 2.6 8B
         let model1 = MBSettingsModel()
         model1.title = "MiniCPM-V 2.6 8B"
@@ -325,7 +325,7 @@ extension MBSettingsViewController {
         if !deviceSupports8B {
             model1.status = "disabled"
             let ramGB = String(format: "%.0f", Double(totalRAM) / 1024 / 1024 / 1024)
-            model1.statusString = "设备不支持（需iPad 6GB+，当前\(ramGB)GB）"
+            model1.statusString = "设备内存不足（需 12 GB，当前 \(ramGB) GB）"
         } else if currentSelectedModel == "V26MultiModel" {
             model1.status = "selected"
             model1.statusString = "正在使用"
@@ -422,11 +422,10 @@ extension MBSettingsViewController {
         // 获取当前选中的模型
         var currentSelectedModel = UserDefaults.standard.string(forKey: "current_selected_model")
         
-        // If V2.6 was selected but device doesn't support it, clear the selection
-        let isIPad = UIDevice.current.userInterfaceIdiom == .pad
+        // 如果 V2.6 已被选中但设备内存不再满足要求，清除选择
         let totalRAM = ProcessInfo.processInfo.physicalMemory
-        let hasEnoughRAMFor8B = totalRAM >= 6 * 1024 * 1024 * 1024
-        if currentSelectedModel == "V26MultiModel" && !(isIPad && hasEnoughRAMFor8B) {
+        let hasEnoughRAMFor8B = totalRAM >= 12 * 1024 * 1024 * 1024
+        if currentSelectedModel == "V26MultiModel" && !hasEnoughRAMFor8B {
             UserDefaults.standard.removeObject(forKey: "current_selected_model")
             currentSelectedModel = nil
             mtmdWrapperExample?.currentUsingModelType = .Unknown

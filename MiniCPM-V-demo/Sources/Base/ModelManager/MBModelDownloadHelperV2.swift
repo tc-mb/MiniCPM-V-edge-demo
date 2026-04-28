@@ -93,12 +93,51 @@ extension MBModelDownloadHelperV2 {
                     return
                 }
                 debugLog("-->> cachePath = \(cachePath)")
+                let fileURL = MBModelDownloadHelperV2.getFileURL(filename: self?.filename ?? "")
+                // 用 fileURLWithPath 更稳，避免路径里出现 % 或非 ASCII 时 URL(string:) parse 失败
+                let cacheURL = URL(fileURLWithPath: cachePath)
+                debugLog("-->> fileURL = \(fileURL.path)")
+
+                // 兜底确保 Documents 目录存在（理论上沙盒一定有，但实际遇到过 race）
+                let docsURL = fileURL.deletingLastPathComponent()
+                if !FileManager.default.fileExists(atPath: docsURL.path) {
+                    try? FileManager.default.createDirectory(at: docsURL, withIntermediateDirectories: true)
+                }
+
+                // 目标若已存在（旧 zip / 旧 gguf 残留）先删除，否则 moveItem 会抛
+                // NSFileWriteFileExistsError，文案在 iOS 上常被本地化成 "no permission to access Documents"。
+                if FileManager.default.fileExists(atPath: fileURL.path) {
+                    do {
+                        try FileManager.default.removeItem(at: fileURL)
+                        debugLog("-->> 已清理旧文件 \(fileURL.lastPathComponent)")
+                    } catch {
+                        debugLog("-->> 清理旧文件失败: \(error.localizedDescription)")
+                    }
+                }
+
                 do {
-                    let fileURL = MBModelDownloadHelperV2.getFileURL(filename: self?.filename ?? "")
-                    let temporaryURLString = String(format: "file://%@", cachePath)
-                    if let cacheURL = URL(string: temporaryURLString) {
-                        try FileManager.default.moveItem(at: cacheURL, to: fileURL)
-                        debugLog("Writing to \(self?.filename ?? "") completed")
+                    try FileManager.default.moveItem(at: cacheURL, to: fileURL)
+                    debugLog("Writing to \(self?.filename ?? "") completed")
+                    DispatchQueue.main.async {
+                        let model = ModelV2(name: self?.modelName ?? "", url: self?.modelUrl ?? "", filename: self?.filename ?? "", status: "downloaded")
+                        self?.mtmdWrapperExample.downloadedModels.append(model)
+                        self?.status = "downloaded"
+                        if let s = self?.status {
+                            completionBlock(s, 1.0)
+                        }
+                    }
+                } catch {
+                    // moveItem 偶尔会因为 cache 与 documents 跨卷或 sandbox 限制失败，回退到 copy + delete
+                    let nserr = error as NSError
+                    debugLog("Error: moveItem 失败 domain=\(nserr.domain) code=\(nserr.code) desc=\(nserr.localizedDescription)，尝试 copyItem 回退")
+                    do {
+                        // copy 之前再确保目标不存在
+                        if FileManager.default.fileExists(atPath: fileURL.path) {
+                            try? FileManager.default.removeItem(at: fileURL)
+                        }
+                        try FileManager.default.copyItem(at: cacheURL, to: fileURL)
+                        try? FileManager.default.removeItem(at: cacheURL)
+                        debugLog("Writing to \(self?.filename ?? "") completed (via copy)")
                         DispatchQueue.main.async {
                             let model = ModelV2(name: self?.modelName ?? "", url: self?.modelUrl ?? "", filename: self?.filename ?? "", status: "downloaded")
                             self?.mtmdWrapperExample.downloadedModels.append(model)
@@ -107,9 +146,15 @@ extension MBModelDownloadHelperV2 {
                                 completionBlock(s, 1.0)
                             }
                         }
+                    } catch {
+                        let e2 = error as NSError
+                        debugLog("Error: copy 回退仍失败 domain=\(e2.domain) code=\(e2.code) desc=\(e2.localizedDescription)")
+                        // 失败必须回传，避免 UI 卡 downloading
+                        DispatchQueue.main.async {
+                            self?.status = "failed"
+                            completionBlock("failed", 0)
+                        }
                     }
-                } catch let err {
-                    debugLog("Error: \(err.localizedDescription)")
                 }
             } failed: { [weak self] in
                 FDownLoaderManager.shareInstance().downLoaderInfo.removeAllObjects()

@@ -51,6 +51,9 @@
 		FAA3C9742E220A7F007FAD29 /* MBV4ModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA3C9732E220A7F007FAD29 /* MBV4ModelDownloadManager.swift */; };
 		FAA3C9762E220C30007FAD29 /* MBV26ModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA3C9752E220C30007FAD29 /* MBV26ModelDownloadManager.swift */; };
 		FAA3C9782E220C30007FAD29 /* MBV46ModelDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA3C9772E220C30007FAD29 /* MBV46ModelDownloadManager.swift */; };
+		FB100A032E2D000100000003 /* MBTutorialModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB100A022E2D000100000002 /* MBTutorialModel.swift */; };
+		FB100A052E2D000100000005 /* MBTutorialCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB100A042E2D000100000004 /* MBTutorialCell.swift */; };
+		FB100A072E2D000100000007 /* MBTutorialViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB100A062E2D000100000006 /* MBTutorialViewController.swift */; };
 		FAAC6D1D2E223B0F00D45121 /* MiniCPMModelConst.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAC6D1C2E223B0F00D45121 /* MiniCPMModelConst.swift */; };
 		FA9AB0022F03000200E00002 /* MiniCPMV46CoreMLBootstrap.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9AB0012F03000100E00001 /* MiniCPMV46CoreMLBootstrap.swift */; };
 		FAAFDFF92C37F85B00BF35BE /* debugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAFDFF82C37F85B00BF35BE /* debugLog.swift */; };
@@ -150,6 +153,9 @@
 		FAA3C9732E220A7F007FAD29 /* MBV4ModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV4ModelDownloadManager.swift; sourceTree = "<group>"; };
 		FAA3C9752E220C30007FAD29 /* MBV26ModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV26ModelDownloadManager.swift; sourceTree = "<group>"; };
 		FAA3C9772E220C30007FAD29 /* MBV46ModelDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBV46ModelDownloadManager.swift; sourceTree = "<group>"; };
+		FB100A022E2D000100000002 /* MBTutorialModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBTutorialModel.swift; sourceTree = "<group>"; };
+		FB100A042E2D000100000004 /* MBTutorialCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBTutorialCell.swift; sourceTree = "<group>"; };
+		FB100A062E2D000100000006 /* MBTutorialViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBTutorialViewController.swift; sourceTree = "<group>"; };
 		FAAC6D1C2E223B0F00D45121 /* MiniCPMModelConst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCPMModelConst.swift; sourceTree = "<group>"; };
 		FA9AB0012F03000100E00001 /* MiniCPMV46CoreMLBootstrap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCPMV46CoreMLBootstrap.swift; sourceTree = "<group>"; };
 		FAAFDFF82C37F85B00BF35BE /* debugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = debugLog.swift; sourceTree = "<group>"; };
@@ -298,8 +304,19 @@
 				FA8511342E20DCC000748053 /* Settings */,
 				FAC2A1D32C11B30400499465 /* Base */,
 				FA72852B2C1199D200A7FD14 /* Home */,
+				FB100A012E2D000100000001 /* Tutorial */,
 			);
 			path = Sources;
+			sourceTree = "<group>";
+		};
+		FB100A012E2D000100000001 /* Tutorial */ = {
+			isa = PBXGroup;
+			children = (
+				FB100A062E2D000100000006 /* MBTutorialViewController.swift */,
+				FB100A042E2D000100000004 /* MBTutorialCell.swift */,
+				FB100A022E2D000100000002 /* MBTutorialModel.swift */,
+			);
+			path = Tutorial;
 			sourceTree = "<group>";
 		};
 		FA49BA0D2C32A178005660C4 /* Extensions */ = {
@@ -718,6 +735,9 @@
 				FA35EE752C4901D30099EDC0 /* MBHomeViewController+CaptureVideo.swift in Sources */,
 				FAA3C9762E220C30007FAD29 /* MBV26ModelDownloadManager.swift in Sources */,
 				FAA3C9782E220C30007FAD29 /* MBV46ModelDownloadManager.swift in Sources */,
+				FB100A032E2D000100000003 /* MBTutorialModel.swift in Sources */,
+				FB100A052E2D000100000005 /* MBTutorialCell.swift in Sources */,
+				FB100A072E2D000100000007 /* MBTutorialViewController.swift in Sources */,
 				FA7517002C452A0500CFB066 /* MBVideoFrameExtractor.swift in Sources */,
 				FAAC6D1D2E223B0F00D45121 /* MiniCPMModelConst.swift in Sources */,
 				FA9AB0022F03000200E00002 /* MiniCPMV46CoreMLBootstrap.swift in Sources */,
@@ -885,7 +905,7 @@
 				CODE_SIGN_ENTITLEMENTS = "MiniCPM-V-demo/MiniCPM-V-demo.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.5;
+				CURRENT_PROJECT_VERSION = 1.6;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = VGXUYC2C5K;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -940,7 +960,7 @@
 				CODE_SIGN_ENTITLEMENTS = "MiniCPM-V-demo/MiniCPM-V-demo.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.5;
+				CURRENT_PROJECT_VERSION = 1.6;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = VGXUYC2C5K;
 				FRAMEWORK_SEARCH_PATHS = (

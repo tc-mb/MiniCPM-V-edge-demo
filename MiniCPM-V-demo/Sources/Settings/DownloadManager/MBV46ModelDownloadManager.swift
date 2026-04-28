@@ -125,30 +125,25 @@ class MBV46ModelDownloadManager: NSObject {
         restoreDownloadProgress()
     }
 
-    /// 用磁盘上的文件存在情况强制 reconcile helper.status。
-    /// 每次 button state 计算前都会调一次，避免 callback race 导致 status 卡住。
-    /// - LLM / mmproj：Documents 下对应 gguf 文件存在即视为 downloaded
-    /// - ANE：必须**解压后的 .mlmodelc/.mlpackage 目录存在且非空**，仅 zip 残留不算 downloaded
+    /// 用磁盘上的文件存在情况强制 reconcile helper.status，**完全按磁盘真相重写**。
+    /// - LLM / mmproj：Documents 下对应 gguf 文件存在 → downloaded，否则 download
+    /// - ANE：解压后的 .mlmodelc/.mlpackage 目录存在且非空 → downloaded；
+    ///        否则一律 download（哪怕 zip 残留也不算就绪，避免误判）
     func reconcileStatusFromDisk() {
         let docs = getDocumentsDirectory()
         let fm = FileManager.default
 
         let llmPath = docs.appendingPathComponent(MiniCPMModelConst.modelv46_FileName).path
-        if fm.fileExists(atPath: llmPath) {
-            modelv46_Q4_K_M_Manager?.status = "downloaded"
-        }
+        modelv46_Q4_K_M_Manager?.status = fm.fileExists(atPath: llmPath) ? "downloaded" : "download"
 
         let mmprojPath = docs.appendingPathComponent(MiniCPMModelConst.mmprojv46_FileName).path
-        if fm.fileExists(atPath: mmprojPath) {
-            mmprojv46_Manager?.status = "downloaded"
-        }
+        mmprojv46_Manager?.status = fm.fileExists(atPath: mmprojPath) ? "downloaded" : "download"
 
-        if isMLModelcReady() {
-            mlmodelcv46_Manager?.status = "downloaded"
-        }
+        mlmodelcv46_Manager?.status = isMLModelcReady() ? "downloaded" : "download"
     }
 
     /// ANE 模型是否真的就绪：解压后的 mlmodelc/mlpackage 目录存在且非空
+    /// 注意：仅 zip 残留不算就绪 —— ANE 实际加载用的是解压后的目录
     private func isMLModelcReady() -> Bool {
         let docs = getDocumentsDirectory()
         let fm = FileManager.default
