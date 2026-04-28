@@ -207,26 +207,116 @@ class MBV4ModelDownloadManager: NSObject {
             }
         }
     }
-    
+
+    // MARK: - reconcile / readiness（V4.6 同款）
+
+    /// 用磁盘上的文件存在情况强制 reconcile helper.status，**完全按磁盘真相重写**。
+    /// - LLM / mmproj：Documents 下对应 gguf 存在 → downloaded，否则 download
+    /// - ANE：解压后的 .mlmodelc/.mlpackage 目录存在且非空 → downloaded；
+    ///        否则一律 download（zip 残留不算就绪，避免误判）
+    func reconcileStatusFromDisk() {
+        let docs = getDocumentsDirectory()
+        let fm = FileManager.default
+
+        let llmPath = docs.appendingPathComponent(MiniCPMModelConst.modelv4_Q4_K_M_FileName).path
+        modelv4_Q4_K_M_Manager?.status = fm.fileExists(atPath: llmPath) ? "downloaded" : "download"
+
+        let mmprojPath = docs.appendingPathComponent(MiniCPMModelConst.mmprojv4_FileName).path
+        mmprojv4_Manager?.status = fm.fileExists(atPath: mmprojPath) ? "downloaded" : "download"
+
+        mlmodelcv4_Manager?.status = isMLModelcv4Ready() ? "downloaded" : "download"
+    }
+
+    /// V4 ANE 解压后目录是否就绪（与 V46 同语义）
+    private func isMLModelcv4Ready() -> Bool {
+        let docs = getDocumentsDirectory()
+        let fm = FileManager.default
+        // 推断解压后的目录名：去掉 zip 后缀；同时给 mlpackage 备选
+        let stem = (MiniCPMModelConst.mlmodelcv4_ZipFileName as NSString).deletingPathExtension
+        let candidates = [stem, (stem as NSString).deletingPathExtension + ".mlpackage"]
+        for name in candidates {
+            let dirURL = docs.appendingPathComponent(name)
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: dirURL.path, isDirectory: &isDir), isDir.boolValue else {
+                continue
+            }
+            if let contents = try? fm.contentsOfDirectory(atPath: dirURL.path), !contents.isEmpty {
+                return true
+            }
+        }
+        return false
+    }
+
+    // MARK: - 一键下载（V4.6 同款）
+
+    /// 同时启动 LLM / VPM / ANE 三段下载（互不阻塞），已就绪的子模型自动跳过
+    func downloadAll() {
+        reconcileStatusFromDisk()
+        debugLog("-->> V4 一键下载：同时拉起 LLM + VPM + ANE（已就绪的会自动跳过）")
+        downloadModelv4_Q4_K_M()
+        downloadMMProjv4()
+        downloadMLModelcv4()
+    }
+
+    /// 三段文件的综合进度，0..1。按段平均加权（不依赖准确字节数）。
+    func overallProgress() -> CGFloat {
+        let mainProg   = progress(forKey: "v4_main_model")
+        let mmprojProg = progress(forKey: "v4_mmproj_model")
+        let aneProg    = progress(forKey: "v4_ane_module")
+        return (mainProg + mmprojProg + aneProg) / 3.0
+    }
+
+    private func progress(forKey modelKey: String) -> CGFloat {
+        let status: String
+        switch modelKey {
+        case "v4_main_model":   status = getModelv4_Q4_K_M_Status()
+        case "v4_mmproj_model": status = getMMProjv4_Status()
+        case "v4_ane_module":   status = getMLModelcv4_Status()
+        default: status = "download"
+        }
+        if status == "downloaded" { return 1.0 }
+        if let info = downloadQueue.sync(execute: { downloadProgressCache[modelKey] }) {
+            return info.progress
+        }
+        return 0
+    }
+
+    /// 比 hasAnyModelDownloading 更可靠：先 reconcile，再判断"还有未完成的下载任务"。
+    /// 已经在磁盘上落地的 key 即使 downloadStates 残留 .downloading 也会被忽略，
+    /// 避免出现"全部下完但 helper.status 没切到 downloaded，按钮卡 100%"。
+    func hasAnyDownloadActive() -> Bool {
+        reconcileStatusFromDisk()
+
+        let mainDone = (modelv4_Q4_K_M_Manager?.status == "downloaded")
+        let mmprojDone = (mmprojv4_Manager?.status == "downloaded")
+        let aneDone = (mlmodelcv4_Manager?.status == "downloaded")
+
+        return downloadQueue.sync {
+            for (key, state) in downloadStates {
+                guard state == .downloading || state == .paused else { continue }
+                switch key {
+                case "v4_main_model":   if mainDone   { continue }
+                case "v4_mmproj_model": if mmprojDone { continue }
+                case "v4_ane_module":   if aneDone    { continue }
+                default: break
+                }
+                return true
+            }
+            return false
+        }
+    }
+
     // MARK: - 下载方法（带防重复调用）
     
     /// 下载 V4 主模型
     func downloadModelv4_Q4_K_M() {
         let modelKey = "v4_main_model"
         
-        // 防重复调用检查
         guard !isDownloading(modelKey) else {
             debugLog("-->> V4主模型正在下载中，忽略重复调用")
             return
         }
-
-        // 模型下载互斥
-        guard !hasAnyModelDownloading() else {
-            debugLog("-->> 已有模型正在下载，忽略本次请求")
-            return
-        }
-        
-        // 检查是否已下载
+        // 已下载就直接跳过；不再做"全局只允许一个"互斥，让一键下载能并行三段
         if getModelv4_Q4_K_M_Status() == "downloaded" {
             debugLog("-->> V4主模型已下载完成")
             return
@@ -263,19 +353,10 @@ class MBV4ModelDownloadManager: NSObject {
     func downloadMMProjv4() {
         let modelKey = "v4_mmproj_model"
         
-        // 防重复调用检查
         guard !isDownloading(modelKey) else {
             debugLog("-->> V4 VIT模型正在下载中，忽略重复调用")
             return
         }
-
-        // 模型下载互斥
-        guard !hasAnyModelDownloading() else {
-            debugLog("-->> 已有模型正在下载，忽略本次请求")
-            return
-        }
-        
-        // 检查是否已下载
         if getMMProjv4_Status() == "downloaded" {
             debugLog("-->> V4 VIT模型已下载完成")
             return
@@ -312,19 +393,10 @@ class MBV4ModelDownloadManager: NSObject {
     func downloadMLModelcv4() {
         let modelKey = "v4_ane_module"
         
-        // 防重复调用检查
         guard !isDownloading(modelKey) else {
             debugLog("-->> V4 ANE模块正在下载中，忽略重复调用")
             return
         }
-
-        // 模型下载互斥
-        guard !hasAnyModelDownloading() else {
-            debugLog("-->> 已有模型正在下载，忽略本次请求")
-            return
-        }
-        
-        // 检查是否已下载
         if getMLModelcv4_Status() == "downloaded" {
             debugLog("-->> V4 ANE模块已下载完成")
             return

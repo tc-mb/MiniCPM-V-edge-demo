@@ -174,16 +174,23 @@ import SnapKit
     // MARK: - 使用该模型按钮 点击 事件
     
     @objc public func useModelButtonTapped() {
-        // 检查是否全部下载完成
-        guard checkAllModelsDownloaded() else {
-            let alert = UIAlertController(title: "提示", message: "请先下载完成所有模型组件", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "确定", style: .default))
-            present(alert, animated: true)
-            return
+        switch currentButtonState() {
+        case .needsDownload:
+            downloadManager.downloadAll()
+            updateUseModelButtonState()
+        case .downloading:
+            break
+        case .ready:
+            setAsCurrentModel()
         }
-        
-        // 设置为当前使用的模型
-        setAsCurrentModel()
+    }
+
+    private enum MainButtonState { case needsDownload, downloading, ready }
+
+    private func currentButtonState() -> MainButtonState {
+        if checkAllModelsDownloaded() { return .ready }
+        if downloadManager.hasAnyDownloadActive() { return .downloading }
+        return .needsDownload
     }
     
     private func showRedownloadAlert() {
@@ -387,6 +394,8 @@ import SnapKit
                 break
             }
         }
+        // 三段任意一段进度变化都让一键下载按钮的百分比跟着刷新
+        updateUseModelButtonState()
     }
     
     private func updateCellCompletion(modelName: String, success: Bool) {
@@ -447,6 +456,7 @@ import SnapKit
                 break
             }
         }
+        updateUseModelButtonState()
     }
 }
 
@@ -589,29 +599,33 @@ extension MBV26ModelDetailViewController {
     
     // MARK: - 模型使用相关方法
     
-    /// 检查所有模型是否已下载完成
+    /// 检查所有模型是否已下载完成（先按磁盘 reconcile，避免 callback race 卡住）
     private func checkAllModelsDownloaded() -> Bool {
-        let mainModelStatus = downloadManager.getModelV26_Q4_K_M_Status()
-        let vitModelStatus = downloadManager.getMMProjV26_Status()
-        let aneModelStatus = downloadManager.getMLModelcV26_Status()
-        
-        return mainModelStatus == "downloaded" && 
-               vitModelStatus == "downloaded" && 
-               aneModelStatus == "downloaded"
+        downloadManager.reconcileStatusFromDisk()
+        return downloadManager.getModelV26_Q4_K_M_Status() == "downloaded" &&
+               downloadManager.getMMProjV26_Status()       == "downloaded" &&
+               downloadManager.getMLModelcV26_Status()     == "downloaded"
     }
-    
-    /// 更新按钮状态
+
+    /// 三态主按钮刷新
     private func updateUseModelButtonState() {
-        let allDownloaded = checkAllModelsDownloaded()
-        
-        if allDownloaded {
+        switch currentButtonState() {
+        case .needsDownload:
             useModelButton.isEnabled = true
+            useModelButton.setTitle("一键下载", for: .normal)
             useModelButton.backgroundColor = UIColor.mb_color(with: "#007AFF")
             useModelButton.setTitleColor(.white, for: .normal)
-        } else {
+        case .downloading:
             useModelButton.isEnabled = false
+            let percent = Int(downloadManager.overallProgress() * 100)
+            useModelButton.setTitle("下载中 \(percent)%", for: .normal)
             useModelButton.backgroundColor = UIColor.mb_color(with: "#CCCCCC")
-            useModelButton.setTitleColor(.gray, for: .normal)
+            useModelButton.setTitleColor(.darkGray, for: .normal)
+        case .ready:
+            useModelButton.isEnabled = true
+            useModelButton.setTitle("使用该模型", for: .normal)
+            useModelButton.backgroundColor = UIColor.mb_color(with: "#007AFF")
+            useModelButton.setTitleColor(.white, for: .normal)
         }
     }
     

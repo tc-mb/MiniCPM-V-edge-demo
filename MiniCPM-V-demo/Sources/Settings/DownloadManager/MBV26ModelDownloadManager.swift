@@ -204,7 +204,103 @@ class MBV26ModelDownloadManager: NSObject {
             }
         }
     }
-    
+
+    // MARK: - reconcile / readiness（V4.6 / V4 同款）
+
+    /// 用磁盘上的文件存在情况强制 reconcile helper.status，**完全按磁盘真相重写**。
+    /// - LLM / mmproj：Documents 下对应 gguf 存在 → downloaded，否则 download
+    /// - ANE：解压后的 .mlmodelc/.mlpackage 目录存在且非空 → downloaded；
+    ///        否则一律 download（zip 残留不算就绪）
+    func reconcileStatusFromDisk() {
+        let docs = getDocumentsDirectory()
+        let fm = FileManager.default
+
+        let llmPath = docs.appendingPathComponent(MiniCPMModelConst.modelQ4_K_MFileName).path
+        modelV26_Q4_K_M_Manager?.status = fm.fileExists(atPath: llmPath) ? "downloaded" : "download"
+
+        let mmprojPath = docs.appendingPathComponent(MiniCPMModelConst.mmprojFileName).path
+        mmprojV26_Manager?.status = fm.fileExists(atPath: mmprojPath) ? "downloaded" : "download"
+
+        mlmodelcV26_Manager?.status = isMLModelcV26Ready() ? "downloaded" : "download"
+    }
+
+    /// V26 ANE 解压后目录是否就绪
+    private func isMLModelcV26Ready() -> Bool {
+        let docs = getDocumentsDirectory()
+        let fm = FileManager.default
+        let stem = (MiniCPMModelConst.mlmodelcZipFileName as NSString).deletingPathExtension
+        let candidates = [stem, (stem as NSString).deletingPathExtension + ".mlpackage"]
+        for name in candidates {
+            let dirURL = docs.appendingPathComponent(name)
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: dirURL.path, isDirectory: &isDir), isDir.boolValue else {
+                continue
+            }
+            if let contents = try? fm.contentsOfDirectory(atPath: dirURL.path), !contents.isEmpty {
+                return true
+            }
+        }
+        return false
+    }
+
+    // MARK: - 一键下载
+
+    /// 同时启动 LLM / VPM / ANE 三段下载（互不阻塞），已就绪的子模型自动跳过
+    func downloadAll() {
+        reconcileStatusFromDisk()
+        debugLog("-->> V2.6 一键下载：同时拉起 LLM + VPM + ANE（已就绪的会自动跳过）")
+        downloadModelV26_Q4_K_M()
+        downloadMMProjV26()
+        downloadMLModelcV26()
+    }
+
+    /// 三段文件的综合进度，0..1。按段平均加权。
+    func overallProgress() -> CGFloat {
+        let mainProg   = progress(forKey: "v26_main_model")
+        let mmprojProg = progress(forKey: "v26_mmproj_model")
+        let aneProg    = progress(forKey: "v26_ane_module")
+        return (mainProg + mmprojProg + aneProg) / 3.0
+    }
+
+    private func progress(forKey modelKey: String) -> CGFloat {
+        let status: String
+        switch modelKey {
+        case "v26_main_model":   status = getModelV26_Q4_K_M_Status()
+        case "v26_mmproj_model": status = getMMProjV26_Status()
+        case "v26_ane_module":   status = getMLModelcV26_Status()
+        default: status = "download"
+        }
+        if status == "downloaded" { return 1.0 }
+        if let info = downloadQueue.sync(execute: { downloadProgressCache[modelKey] }) {
+            return info.progress
+        }
+        return 0
+    }
+
+    /// 比 hasAnyModelDownloading 更可靠：先 reconcile，再判断"还有未完成的下载任务"。
+    /// 已经在磁盘上落地的 key 即使 downloadStates 残留 .downloading 也会被忽略。
+    func hasAnyDownloadActive() -> Bool {
+        reconcileStatusFromDisk()
+
+        let mainDone = (modelV26_Q4_K_M_Manager?.status == "downloaded")
+        let mmprojDone = (mmprojV26_Manager?.status == "downloaded")
+        let aneDone = (mlmodelcV26_Manager?.status == "downloaded")
+
+        return downloadQueue.sync {
+            for (key, state) in downloadStates {
+                guard state == .downloading || state == .paused else { continue }
+                switch key {
+                case "v26_main_model":   if mainDone   { continue }
+                case "v26_mmproj_model": if mmprojDone { continue }
+                case "v26_ane_module":   if aneDone    { continue }
+                default: break
+                }
+                return true
+            }
+            return false
+        }
+    }
+
     // MARK: - 下载方法（带防重复调用）
     
     /// 下载 V26 主模型
