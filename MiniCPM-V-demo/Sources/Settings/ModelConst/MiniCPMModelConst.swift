@@ -118,7 +118,7 @@ struct MiniCPMModelConst {
     static let modelv46_Q4_K_M_URLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/minicpmv46-llm-Q4_K_M.gguf"
 
     /// V4.6 主模型 md5
-    static let modelv46_Q4_K_M_MD5 = "50a8b46b26c282cd95b13ecd83a3af0f"
+    static let modelv46_Q4_K_M_MD5 = "bd9f90774f0e81c49a22ea6445e9de91"
     
     
     // MARK: - MiniCPM-V 4.6 mmproj VIT 模型
@@ -133,7 +133,7 @@ struct MiniCPMModelConst {
     static let mmprojv46_URLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/mmproj-v46-model-f16.gguf"
 
     /// V4.6 mmproj md5
-    static let modelMMProjv46_MD5 = "e6ef4e3779f86c4ca76f9b8ea65f9e26"
+    static let modelMMProjv46_MD5 = "64d56c8cc6bd59b5d94c011eb23ce777"
     
     
     // MARK: - MiniCPM-V 4.6 ANE 模块
@@ -158,6 +158,6 @@ struct MiniCPMModelConst {
     static let mlmodelcv46_ZipFileURLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/coreml_minicpmv46_vit_all_f32.mlmodelc.zip"
 
     /// V4.6 ANE zip md5
-    static let mlmodelcv46_ZipFileMD5 = "9845f4a2f513d387ab4826a81f241f36"
+    static let mlmodelcv46_ZipFileMD5 = "8d33d6a5bde87d1befa26b7ae6f7bd98"
     
 }
