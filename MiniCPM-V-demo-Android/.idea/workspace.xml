@@ -1,107 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+    <layouts>
+      <layout url="file://$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml">
+        <config>
+          <theme>@style/Theme.MiniCPMVdemo</theme>
+        </config>
+      </layout>
+    </layouts>
+  </component>
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="9feebb8e-5e8a-410b-a224-8190a99e39c6" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/Info.plist" beforeDir="false" afterPath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/Info.plist" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64/llama.framework/llama" beforeDir="false" afterPath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64/llama.framework/llama" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/ggml-alloc.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/ggml-backend.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/ggml-blas.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/ggml-cpu.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/ggml-metal.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/ggml-opt.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/ggml.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/gguf.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/llama.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/mtmd-helper.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/mtmd-ios.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Headers/mtmd.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Info.plist" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/Modules/module.modulemap" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/llama" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Headers" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Modules" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Resources" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/ggml-alloc.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/ggml-backend.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/ggml-blas.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/ggml-cpu.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/ggml-metal.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/ggml-opt.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/ggml.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/gguf.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/llama.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/mtmd-helper.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/mtmd-ios.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Headers/mtmd.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Modules/module.modulemap" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/Resources/Info.plist" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/A/llama" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/Versions/Current" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/macos-arm64_x86_64/llama.framework/llama" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/ggml-alloc.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/ggml-backend.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/ggml-blas.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/ggml-cpu.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/ggml-metal.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/ggml-opt.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/ggml.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/gguf.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/llama.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/mtmd-helper.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/mtmd-ios.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Headers/mtmd.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Info.plist" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/Modules/module.modulemap" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64/llama.framework/llama" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/ggml-alloc.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/ggml-backend.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/ggml-blas.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/ggml-cpu.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/ggml-metal.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/ggml-opt.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/ggml.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/gguf.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/llama.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/mtmd-helper.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/mtmd-ios.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Headers/mtmd.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Info.plist" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/Modules/module.modulemap" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/tvos-arm64_x86_64-simulator/llama.framework/llama" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/ggml-alloc.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/ggml-backend.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/ggml-blas.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/ggml-cpu.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/ggml-metal.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/ggml-opt.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/ggml.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/gguf.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/llama.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/mtmd-helper.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/mtmd-ios.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Headers/mtmd.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Info.plist" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/Modules/module.modulemap" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64/llama.framework/llama" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/ggml-alloc.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/ggml-backend.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/ggml-blas.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/ggml-cpu.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/ggml-metal.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/ggml-opt.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/ggml.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/gguf.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/llama.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/mtmd-helper.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/mtmd-ios.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Headers/mtmd.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Info.plist" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/Modules/module.modulemap" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MiniCPM-V-demo/thirdparty/llama.xcframework/xros-arm64_x86_64-simulator/llama.framework/llama" beforeDir="false" />
+    <list default="true" id="75deb65d-d97f-4787-8631-8e2201e14df0" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../.gitmodules" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -111,35 +27,175 @@
   <component name="ClangdSettings">
     <option name="formatViaClangd" value="false" />
   </component>
-  <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../llama.cpp" />
+  <component name="ExecutionTargetManager" SELECTED_TARGET="device_and_snapshot_combo_box_target[LocalEmulator::path=/Users/tianchi/.android/avd/Pixel_7.avd]" />
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
   </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="MiniCPM-V-demo" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
+  </component>
+  <component name="GradleScriptDefinitionsStorage" workingDir="$PROJECT_DIR$" gradleHome="C:\Users\86156\.gradle\wrapper\dists\gradle-9.3.1-bin\23ovyewtku6u96viwx3xl3oks\gradle-9.3.1" javaHome="G:\Android_as\jbr" gradleVersion="9.3.1" />
   <component name="ProjectColorInfo">{
-  &quot;customColor&quot;: &quot;&quot;,
-  &quot;associatedIndex&quot;: 3
+  &quot;associatedIndex&quot;: 2
 }</component>
-  <component name="ProjectId" id="3CcnioslZkMIP4SyMIescs2xvPJ" />
+  <component name="ProjectId" id="3CjFRF7HH36jpbvCQvziLcJnsmy" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
-    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
-    &quot;cidr.known.project.marker&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Android App.app.executor": "Run",
+    "Gradle.Tests in 'MiniCPM-V-demo.app'.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "and",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.17",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "AndroidSdkUpdater"
   }
-}</component>
+}]]></component>
+  <component name="PsdUISettings">
+    <option name="MODULE_TAB" value="Default Config" />
+    <option name="LAST_EDITED_SIGNING_CONFIG" value="debug" />
+  </component>
+  <component name="RunManager" selected="Gradle.Tests in 'MiniCPM-V-demo.app'">
+    <configuration name="app" type="AndroidRunConfigurationType" factoryName="Android App" activateToolWindowBeforeRun="false">
+      <module name="MiniCPM-V-demo.app" />
+      <option name="ANDROID_RUN_CONFIGURATION_SCHEMA_VERSION" value="1" />
+      <option name="DEPLOY" value="true" />
+      <option name="DEPLOY_APK_FROM_BUNDLE" value="false" />
+      <option name="DEPLOY_AS_INSTANT" value="false" />
+      <option name="ARTIFACT_NAME" value="" />
+      <option name="PM_INSTALL_OPTIONS" value="" />
+      <option name="ALL_USERS" value="false" />
+      <option name="ALWAYS_INSTALL_WITH_PM" value="false" />
+      <option name="ALLOW_ASSUME_VERIFIED" value="false" />
+      <option name="CLEAR_APP_STORAGE" value="false" />
+      <option name="DYNAMIC_FEATURES_DISABLED_LIST" value="" />
+      <option name="ACTIVITY_EXTRA_FLAGS" value="" />
+      <option name="MODE" value="default_activity" />
+      <option name="RESTORE_ENABLED" value="false" />
+      <option name="RESTORE_FILE" value="" />
+      <option name="RESTORE_FRESH_INSTALL_ONLY" value="false" />
+      <option name="CLEAR_LOGCAT" value="false" />
+      <option name="SHOW_LOGCAT_AUTOMATICALLY" value="false" />
+      <option name="TARGET_SELECTION_MODE" value="DEVICE_AND_SNAPSHOT_COMBO_BOX" />
+      <option name="DEBUGGER_TYPE" value="Auto" />
+      <Auto>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Auto>
+      <Hybrid>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Hybrid>
+      <Java>
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Java>
+      <Native>
+        <option name="USE_JAVA_AWARE_DEBUGGER" value="false" />
+        <option name="SHOW_STATIC_VARS" value="true" />
+        <option name="WORKING_DIR" value="" />
+        <option name="TARGET_LOGGING_CHANNELS" value="lldb process:gdb-remote packets" />
+        <option name="SHOW_OPTIMIZED_WARNING" value="true" />
+        <option name="ATTACH_ON_WAIT_FOR_DEBUGGER" value="false" />
+        <option name="DEBUG_SANDBOX_SDK" value="false" />
+      </Native>
+      <Profilers>
+        <option name="ADVANCED_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_ENABLED" value="false" />
+        <option name="STARTUP_CPU_PROFILING_CONFIGURATION_NAME" value="Java/Kotlin Method Sample (legacy)" />
+        <option name="STARTUP_NATIVE_MEMORY_PROFILING_ENABLED" value="false" />
+        <option name="NATIVE_MEMORY_SAMPLE_RATE_BYTES" value="2048" />
+      </Profilers>
+      <option name="DEEP_LINK" value="" />
+      <option name="ACTIVITY" value="" />
+      <option name="ACTIVITY_CLASS" value="" />
+      <option name="SEARCH_ACTIVITY_IN_GLOBAL_SCOPE" value="false" />
+      <option name="SKIP_ACTIVITY_VALIDATION" value="false" />
+      <method v="2">
+        <option name="Android.Gradle.BeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Tests in 'MiniCPM-V-demo.app'" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+      <ExternalSystemSettings>
+        <option name="executionName" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="externalSystemIdString" value="GRADLE" />
+        <option name="scriptParameters" value="" />
+        <option name="taskDescriptions">
+          <list />
+        </option>
+        <option name="taskNames">
+          <list>
+            <option value=":app:testDebugUnitTest" />
+          </list>
+        </option>
+        <option name="vmOptions" />
+      </ExternalSystemSettings>
+      <ExternalSystemDebugServerProcess>false</ExternalSystemDebugServerProcess>
+      <ExternalSystemReattachDebugProcess>true</ExternalSystemReattachDebugProcess>
+      <ExternalSystemDebugDisabled>false</ExternalSystemDebugDisabled>
+      <DebugAllEnabled>false</DebugAllEnabled>
+      <RunAsTest>true</RunAsTest>
+      <GradleProfilingDisabled>false</GradleProfilingDisabled>
+      <GradleCoverageDisabled>false</GradleCoverageDisabled>
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Gradle.Tests in 'MiniCPM-V-demo.app'" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="9feebb8e-5e8a-410b-a224-8190a99e39c6" name="Changes" comment="" />
-      <created>1776693856393</created>
+      <changelist id="75deb65d-d97f-4787-8631-8e2201e14df0" name="Changes" comment="" />
+      <created>1776891061590</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1776693856393</updated>
+      <updated>1776891061590</updated>
     </task>
     <servers />
   </component>
