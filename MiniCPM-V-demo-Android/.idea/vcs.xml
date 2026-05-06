@@ -4,6 +4,5 @@
     <mapping directory="$PROJECT_DIR$/.." vcs="Git" />
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../llama.cpp" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/../../llama.cpp" vcs="Git" />
   </component>
 </project>
