@@ -49,7 +49,7 @@ import llama
     ///   - nPredict: 预测长度，默认 100
     ///   - nCtx: 上下文长度，默认 4096
     ///   - nThreads: 线程数，默认 4
-    ///   - temperature: 温度参数，默认 0.7
+    ///   - temperature: 温度参数，默认 0.5（业务调优最佳组合）
     ///   - useGPU: 是否使用 GPU，默认 false
     ///   - mmprojUseGPU: 多模态投影是否使用 GPU，默认 false
     ///   - warmup: 是否预热，默认 true
@@ -60,7 +60,7 @@ import llama
         nPredict: Int = 100,
         nCtx: Int = 4096,
         nThreads: Int = 4,
-        temperature: Float = 0.7,
+        temperature: Float = 0.5,
         useGPU: Bool = true,
         mmprojUseGPU: Bool = true,
         warmup: Bool = true
