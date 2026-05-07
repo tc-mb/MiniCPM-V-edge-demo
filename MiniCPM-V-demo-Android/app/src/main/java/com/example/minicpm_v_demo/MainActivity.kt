@@ -51,6 +51,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        LlamaEngine.migrateLegacyLayoutIfNeeded(applicationContext)
+
         initViews()
         setupRecyclerView()
         setupClickListeners()

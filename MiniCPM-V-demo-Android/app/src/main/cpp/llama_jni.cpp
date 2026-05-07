@@ -24,14 +24,16 @@ static std::string join(const std::vector<T> &values, const std::string &delim) 
     return str.str();
 }
 
-constexpr int   N_THREADS_MIN           = 2;
-constexpr int   N_THREADS_MAX           = 5;
-constexpr int   N_THREADS_HEADROOM      = 0;
+// Inference parameters mirror the iOS demo defaults (MTMDParams.swift / mtmd-ios.cpp):
+//   nThreads=4, nCtx=4096, nBatch=2048, temperature=0.5, top_k=100, top_p=0.8,
+//   penalty_repeat=1.05, nPredict=100. Keeping Android in lockstep avoids
+//   per-platform divergence in generation quality and prefill latency.
+constexpr int   N_THREADS               = 4;
 
 constexpr int   DEFAULT_CONTEXT_SIZE    = 4096;
 constexpr int   OVERFLOW_HEADROOM       = 4;
-constexpr int   BATCH_SIZE              = 512;
-constexpr float DEFAULT_SAMPLER_TEMP    = 0.2f;
+constexpr int   BATCH_SIZE              = 2048;
+constexpr float DEFAULT_SAMPLER_TEMP    = 0.5f;
 
 static llama_model                      * g_model;
 static llama_context                    * g_context;
@@ -39,6 +41,12 @@ static llama_batch                        g_batch;
 static common_chat_templates_ptr          g_chat_templates;
 static common_sampler                   * g_sampler;
 static mtmd_context                     * g_ctx_vision;
+// MiniCPM-V family version of the loaded mmproj. 0 = not minicpmv / no mmproj.
+// 5  = V-4.0
+// 6  = o-4.0
+// 100045 = o-4.5
+// 46/460/461 = V-4.6 (instruct/thinking)
+static int                                g_minicpmv_version = 0;
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -112,10 +120,7 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_loadMmproj(JNIEnv *env, jobject, j
     // recognition). Set to -1 (or remove) to use the model default of 9 slices.
     mparams.image_max_slice_nums = 1;
 
-    const int n_threads = std::max(N_THREADS_MIN, std::min(N_THREADS_MAX,
-                                                 (int) sysconf(_SC_NPROCESSORS_ONLN) -
-                                                 N_THREADS_HEADROOM));
-    mparams.n_threads = n_threads;
+    mparams.n_threads = N_THREADS;
 
     g_ctx_vision = mtmd_init_from_file(mmproj_path, g_model, mparams);
     env->ReleaseStringUTFChars(jmmproj_path, mmproj_path);
@@ -125,8 +130,11 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_loadMmproj(JNIEnv *env, jobject, j
         return 2;
     }
 
-    LOGi("%s: mmproj model loaded successfully! Vision: %s",
-         __func__, mtmd_support_vision(g_ctx_vision) ? "yes" : "no");
+    g_minicpmv_version = mtmd_get_minicpmv_version(g_ctx_vision);
+    LOGi("%s: mmproj model loaded successfully! Vision: %s, minicpmv_version: %d",
+         __func__,
+         mtmd_support_vision(g_ctx_vision) ? "yes" : "no",
+         g_minicpmv_version);
     return 0;
 }
 
@@ -136,10 +144,7 @@ static llama_context *init_context(llama_model *model, const int n_ctx = DEFAULT
         return nullptr;
     }
 
-    const int n_threads = std::max(N_THREADS_MIN, std::min(N_THREADS_MAX,
-                                                     (int) sysconf(_SC_NPROCESSORS_ONLN) -
-                                                     N_THREADS_HEADROOM));
-    LOGi("%s: Using %d threads", __func__, n_threads);
+    LOGi("%s: Using %d threads (aligned with iOS demo MTMDParams)", __func__, N_THREADS);
 
     llama_context_params ctx_params = llama_context_default_params();
     const int trained_context_size = llama_model_n_ctx_train(model);
@@ -150,8 +155,8 @@ static llama_context *init_context(llama_model *model, const int n_ctx = DEFAULT
     ctx_params.n_ctx = n_ctx;
     ctx_params.n_batch = BATCH_SIZE;
     ctx_params.n_ubatch = BATCH_SIZE;
-    ctx_params.n_threads = n_threads;
-    ctx_params.n_threads_batch = n_threads;
+    ctx_params.n_threads = N_THREADS;
+    ctx_params.n_threads_batch = N_THREADS;
     auto *context = llama_init_from_model(g_model, ctx_params);
     if (context == nullptr) {
         LOGe("%s: llama_new_context_with_model() returned null)", __func__);
@@ -206,6 +211,23 @@ static void reset_long_term_states(const bool clear_kv_cache = true) {
 
     if (clear_kv_cache)
         llama_memory_clear(llama_get_memory(g_context), false);
+}
+
+// Mirror of iOS demo (mtmd-ios.cpp prefill_text role="user"):
+// the assistant turn prefix depends on the MiniCPM-V variant. v4.6-instruct
+// uses enable_thinking=false and embeds the empty <think>...</think> block
+// directly so the model emits the response right after; v4.6-thinking lets
+// the model produce its own thinking; v4.0 / v2.x use plain ChatML.
+static const char * assistant_turn_prefix() {
+    switch (g_minicpmv_version) {
+        case 460: // MiniCPM-V-4.6 instruct (enable_thinking = false)
+            return "<|im_start|>assistant\n<think>\n\n</think>\n\n";
+        case 461: // MiniCPM-V-4.6 thinking (model emits its own <think>...</think>)
+        case 46:  // legacy 4.6 alias
+            return "<|im_start|>assistant\n";
+        default:
+            return "<|im_start|>assistant\n";
+    }
 }
 
 static void shift_context() {
@@ -467,23 +489,24 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processUserPrompt(
 
     std::string formatted_user_prompt;
     if (g_ctx_vision) {
+        // Fallback only when nothing has been prefilled yet (no setSystemPrompt() called).
+        // Mirrors iOS mtmd-ios.cpp prefill_text(role=user) behaviour for first turn.
         if (current_position == 0) {
             formatted_user_prompt += "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n";
         }
         formatted_user_prompt += "<|im_start|>user\n" + content_for_format + "<|im_end|>\n";
-        if (g_vision_mode) {
-            formatted_user_prompt += "<|im_start|>assistant\n thinking\n\n response\n\n";
-        } else {
-            formatted_user_prompt += "<|im_start|>assistant\n";
-        }
+        formatted_user_prompt += assistant_turn_prefix();
 
         common_chat_msg new_msg;
         new_msg.role = ROLE_USER;
         new_msg.content = content_for_format;
         chat_msgs.push_back(new_msg);
 
-        LOGi("%s: Formatted user prompt (iOS-style manual, image=%s): \n%s\n",
-             __func__, g_image_prefilled ? "yes" : "no", formatted_user_prompt.c_str());
+        LOGi("%s: Formatted user prompt (mtmd, image=%s, minicpmv=%d): \n%s\n",
+             __func__,
+             g_image_prefilled ? "yes" : "no",
+             g_minicpmv_version,
+             formatted_user_prompt.c_str());
 
         g_image_prefilled = false;
     } else {

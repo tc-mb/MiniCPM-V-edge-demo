@@ -19,9 +19,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
 
 sealed class LlamaState {
     object Uninitialized : LlamaState()
@@ -48,7 +50,8 @@ class LlamaEngine private constructor(
         @Volatile
         private var instance: LlamaEngine? = null
 
-        const val DEFAULT_PREDICT_LENGTH = 1024
+        // Per-turn token budget. Mirrors iOS demo MTMDParams.swift (nPredict = 100).
+        const val DEFAULT_PREDICT_LENGTH = 100
 
         const val MODEL_SUBDIR = "models"
 
@@ -77,147 +80,268 @@ class LlamaEngine private constructor(
         fun modelDir(context: Context): String =
             File(context.filesDir, MODEL_SUBDIR).absolutePath
 
+        fun modelDirFor(context: Context, model: ModelInfo): String =
+            File(modelDir(context), model.id).absolutePath
+
         fun modelPath(context: Context): String {
             val model = getSelectedModel(context)
-            return File(modelDir(context), model.ggufFileName).absolutePath
+            return File(modelDirFor(context, model), model.ggufFileName).absolutePath
         }
 
         fun mmprojPath(context: Context): String {
             val model = getSelectedModel(context)
-            return File(modelDir(context), model.mmprojFileName).absolutePath
+            return File(modelDirFor(context, model), model.mmprojFileName).absolutePath
         }
 
         fun modelsExist(context: Context): Boolean =
             File(modelPath(context)).exists() && File(mmprojPath(context)).exists()
+
+        // Rename map for files that were previously sideloaded with a
+        // different name and now need to match the iOS demo's filenames so a
+        // re-push isn't required. Keyed by ModelInfo.id; values are
+        // (oldName -> newName) pairs scoped to that model's sub-directory.
+        private val LEGACY_FILE_RENAMES: Map<String, List<Pair<String, String>>> = mapOf(
+            "minicpm-v-4_6-instruct" to listOf(
+                "MiniCPM-V4.6-instruct-Q4_K_M.gguf" to "minicpmv46-llm-Q4_K_M.gguf",
+                "mmproj-model-f16.gguf" to "mmproj-v46-model-f16.gguf"
+            )
+        )
+
+        // One-shot migration: previously all model files lived flat under models/.
+        // With multiple models (v4, v4.6, ...) some filenames collide (e.g. mmproj-model-f16.gguf),
+        // so each model now gets its own subdirectory keyed by ModelInfo.id.
+        // Also handles renaming files that have been sideloaded under a
+        // legacy name (see [LEGACY_FILE_RENAMES]).
+        fun migrateLegacyLayoutIfNeeded(context: Context) {
+            val rootDir = File(modelDir(context))
+            if (!rootDir.exists()) return
+
+            for (model in ModelInfo.AVAILABLE_MODELS) {
+                val targetDir = File(rootDir, model.id)
+                val flatGguf = File(rootDir, model.ggufFileName)
+                val flatMmproj = File(rootDir, model.mmprojFileName)
+                if (flatGguf.exists() || flatMmproj.exists()) {
+                    if (!targetDir.exists()) targetDir.mkdirs()
+                    if (flatGguf.exists()) {
+                        val dst = File(targetDir, model.ggufFileName)
+                        if (!dst.exists() && flatGguf.renameTo(dst)) {
+                            Log.i(TAG, "Migrated legacy ${model.ggufFileName} into ${model.id}/")
+                        }
+                    }
+                    if (flatMmproj.exists()) {
+                        val dst = File(targetDir, model.mmprojFileName)
+                        if (!dst.exists() && flatMmproj.renameTo(dst)) {
+                            Log.i(TAG, "Migrated legacy ${model.mmprojFileName} into ${model.id}/")
+                        }
+                    }
+                }
+
+                LEGACY_FILE_RENAMES[model.id]?.let { renames ->
+                    val perModelDir = File(rootDir, model.id)
+                    if (!perModelDir.exists()) return@let
+                    for ((oldName, newName) in renames) {
+                        val src = File(perModelDir, oldName)
+                        val dst = File(perModelDir, newName)
+                        if (src.exists() && !dst.exists() && src.renameTo(dst)) {
+                            Log.i(TAG, "Renamed legacy ${model.id}/$oldName -> $newName")
+                        }
+                    }
+                }
+            }
+        }
 
         suspend fun downloadModels(
             context: Context,
             onProgress: (String) -> Unit
         ) = withContext(Dispatchers.IO) {
             val model = getSelectedModel(context)
-            val dir = File(modelDir(context))
+            val dir = File(modelDirFor(context, model))
             if (!dir.exists()) dir.mkdirs()
 
-            val files = listOf(model.ggufFileName, model.mmprojFileName)
+            // Each entry describes one file to fetch: (display source, name,
+            // download URL, expected MD5 or null).
+            // Direct-URL models (e.g. MiniCPM-V-4.6, served from a temporary
+            // OBS bucket) bypass HF/MS probing entirely and mirror the iOS
+            // demo. Repo-based models keep the HF-then-ModelScope fallback.
+            data class Job(val source: String, val name: String, val url: URL, val md5: String?)
 
-            val hfBase = "https://huggingface.co/${model.hfRepo}/resolve/${model.hfBranch}"
-            val msBase = "https://www.modelscope.cn/models/${model.msRepo}/resolve/${model.msBranch}"
+            val jobs: List<Job> = if (model.hasDirectUrls) {
+                onProgress("使用直链下载 (与 iOS 同源)...")
+                listOf(
+                    Job("直链", model.ggufFileName, URL(model.directGgufUrl), model.ggufMd5),
+                    Job("直链", model.mmprojFileName, URL(model.directMmprojUrl), model.mmprojMd5)
+                )
+            } else {
+                val hfRepo = requireNotNull(model.hfRepo) {
+                    "Model ${model.id} has neither hfRepo nor direct URLs"
+                }
+                val msRepo = requireNotNull(model.msRepo) {
+                    "Model ${model.id} has neither msRepo nor direct URLs"
+                }
+                val hfBase = "https://huggingface.co/$hfRepo/resolve/${model.hfBranch}"
+                val msBase = "https://www.modelscope.cn/models/$msRepo/resolve/${model.msBranch}"
 
-            onProgress("正在连接 HuggingFace...")
+                onProgress("正在连接 HuggingFace...")
+                val hfOk = probeReachable(URL("$hfBase/${model.ggufFileName}"))
 
-            val hfOk = try {
-                val testUrl = URL("$hfBase/${model.ggufFileName}")
-                val conn = (testUrl.openConnection() as HttpURLConnection).apply {
+                val (baseUrl, source) = if (hfOk) {
+                    onProgress("HuggingFace 连接成功，开始下载...")
+                    Pair(hfBase, "HuggingFace")
+                } else {
+                    onProgress("HuggingFace 连接失败，切换到 ModelScope...")
+                    val msOk = probeReachable(URL("$msBase/${model.ggufFileName}"))
+                    if (!msOk) {
+                        throw RuntimeException("HuggingFace 和 ModelScope 均无法连接，请检查网络后重试")
+                    }
+                    onProgress("ModelScope 连接成功，开始下载...")
+                    Pair(msBase, "ModelScope")
+                }
+                listOf(
+                    Job(source, model.ggufFileName, URL("$baseUrl/${model.ggufFileName}"), model.ggufMd5),
+                    Job(source, model.mmprojFileName, URL("$baseUrl/${model.mmprojFileName}"), model.mmprojMd5)
+                )
+            }
+
+            for (job in jobs) {
+                downloadFile(dir, job.name, job.url, job.source, job.md5, onProgress)
+            }
+
+            onProgress("所有模型文件下载完成!")
+        }
+
+        private fun probeReachable(url: URL): Boolean {
+            return try {
+                val conn = (url.openConnection() as HttpURLConnection).apply {
                     connectTimeout = 5000
                     readTimeout = 5000
                     requestMethod = "HEAD"
+                    instanceFollowRedirects = true
                     setRequestProperty("User-Agent", "MiniCPMV-demo/1.0")
                 }
                 val code = conn.responseCode
                 conn.disconnect()
                 code == HttpURLConnection.HTTP_OK
             } catch (e: Exception) {
-                Log.w(TAG, "HuggingFace check failed: ${e.message}")
+                Log.w(TAG, "Reachability probe failed for $url: ${e.message}")
                 false
             }
+        }
 
-            val (baseUrl, source) = if (hfOk) {
-                onProgress("HuggingFace 连接成功，开始下载...")
-                Pair(hfBase, "HuggingFace")
-            } else {
-                onProgress("HuggingFace 连接失败，切换到 ModelScope...")
+        private fun downloadFile(
+            dir: File,
+            fileName: String,
+            url: URL,
+            source: String,
+            expectedMd5: String?,
+            onProgress: (String) -> Unit
+        ) {
+            val targetFile = File(dir, fileName)
 
-                val msOk = try {
-                    val testUrl = URL("$msBase/${model.ggufFileName}")
-                    val conn = (testUrl.openConnection() as HttpURLConnection).apply {
-                        connectTimeout = 5000
-                        readTimeout = 5000
-                        requestMethod = "HEAD"
-                        setRequestProperty("User-Agent", "MiniCPMV-demo/1.0")
-                    }
-                    val code = conn.responseCode
-                    conn.disconnect()
-                    code == HttpURLConnection.HTTP_OK
-                } catch (e: Exception) {
-                    Log.w(TAG, "ModelScope check failed: ${e.message}")
-                    false
+            // Fast path: if the file is already on disk and its hash matches,
+            // skip re-downloading. Saves 500MB-1GB on app reinstall / dev
+            // iteration when the previous download is still valid.
+            if (targetFile.exists() && expectedMd5 != null) {
+                onProgress("[$source] 校验已存在的 $fileName ...")
+                val actual = computeMd5(targetFile)
+                if (actual.equals(expectedMd5, ignoreCase = true)) {
+                    onProgress("$fileName 已就绪 (MD5 校验通过)")
+                    Log.i(TAG, "$fileName already present and MD5 matches, skipping download")
+                    return
                 }
-
-                if (!msOk) {
-                    throw RuntimeException("HuggingFace 和 ModelScope 均无法连接，请检查网络后重试")
-                }
-
-                onProgress("ModelScope 连接成功，开始下载...")
-                Pair(msBase, "ModelScope")
+                Log.w(TAG, "$fileName already present but MD5 mismatch (got $actual, want $expectedMd5); re-downloading")
+                targetFile.delete()
             }
 
-            for (fileName in files) {
-                val targetFile = File(dir, fileName)
-                val url = URL("$baseUrl/$fileName")
+            onProgress("[$source] 下载 $fileName...")
+            Log.i(TAG, "Downloading $fileName from $source: $url")
 
-                onProgress("[$source] 下载 $fileName...")
-                Log.i(TAG, "Downloading $fileName from $source: $url")
+            val conn = (url.openConnection() as HttpURLConnection).apply {
+                connectTimeout = 10000
+                readTimeout = 120000
+                requestMethod = "GET"
+                instanceFollowRedirects = true
+                setRequestProperty("User-Agent", "MiniCPMV-demo/1.0")
+            }
 
-                val conn = (url.openConnection() as HttpURLConnection).apply {
-                    connectTimeout = 10000
-                    readTimeout = 120000
-                    requestMethod = "GET"
-                    setRequestProperty("User-Agent", "MiniCPMV-demo/1.0")
+            try {
+                val responseCode = conn.responseCode
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    throw RuntimeException("$source returned $responseCode for $fileName")
                 }
 
-                try {
-                    val responseCode = conn.responseCode
-                    if (responseCode != HttpURLConnection.HTTP_OK) {
-                        throw RuntimeException("$source returned $responseCode for $fileName")
-                    }
+                val contentLength = conn.contentLength.toLong()
+                val tmpFile = File(dir, "$fileName.tmp")
 
-                    val contentLength = conn.contentLength.toLong()
-                    val tmpFile = File(dir, "$fileName.tmp")
+                conn.inputStream.use { input ->
+                    FileOutputStream(tmpFile).use { output ->
+                        val buffer = ByteArray(8192)
+                        var totalRead = 0L
+                        var lastProgressTime = 0L
 
-                    conn.inputStream.use { input ->
-                        FileOutputStream(tmpFile).use { output ->
-                            val buffer = ByteArray(8192)
-                            var totalRead = 0L
-                            var lastProgressTime = 0L
+                        while (true) {
+                            val read = input.read(buffer)
+                            if (read == -1) break
+                            output.write(buffer, 0, read)
+                            totalRead += read
 
-                            while (true) {
-                                val read = input.read(buffer)
-                                if (read == -1) break
-                                output.write(buffer, 0, read)
-                                totalRead += read
-
-                                val now = System.currentTimeMillis()
-                                if (now - lastProgressTime > 500) {
-                                    lastProgressTime = now
-                                    val progress = if (contentLength > 0) {
-                                        val pct = totalRead * 100 / contentLength
-                                        val mb = totalRead / (1024 * 1024)
-                                        val totalMb = contentLength / (1024 * 1024)
-                                        "$fileName: $pct% ($mb/$totalMb MB)"
-                                    } else {
-                                        val mb = totalRead / (1024 * 1024)
-                                        "$fileName: $mb MB downloaded"
-                                    }
-                                    onProgress(progress)
+                            val now = System.currentTimeMillis()
+                            if (now - lastProgressTime > 500) {
+                                lastProgressTime = now
+                                val progress = if (contentLength > 0) {
+                                    val pct = totalRead * 100 / contentLength
+                                    val mb = totalRead / (1024 * 1024)
+                                    val totalMb = contentLength / (1024 * 1024)
+                                    "$fileName: $pct% ($mb/$totalMb MB)"
+                                } else {
+                                    val mb = totalRead / (1024 * 1024)
+                                    "$fileName: $mb MB downloaded"
                                 }
+                                onProgress(progress)
                             }
                         }
                     }
+                }
 
-                    if (targetFile.exists()) targetFile.delete()
-                    if (!tmpFile.renameTo(targetFile)) {
-                        tmpFile.copyTo(targetFile, overwrite = true)
-                        tmpFile.delete()
+                if (targetFile.exists()) targetFile.delete()
+                if (!tmpFile.renameTo(targetFile)) {
+                    tmpFile.copyTo(targetFile, overwrite = true)
+                    tmpFile.delete()
+                }
+
+                if (expectedMd5 != null) {
+                    onProgress("[$source] 校验 $fileName MD5...")
+                    val actual = computeMd5(targetFile)
+                    if (!actual.equals(expectedMd5, ignoreCase = true)) {
+                        Log.e(TAG, "$fileName MD5 mismatch: expected $expectedMd5, got $actual")
+                        targetFile.delete()
+                        throw RuntimeException(
+                            "$fileName MD5 校验失败 (期望 $expectedMd5, 实际 $actual)，文件已删除，请重试"
+                        )
                     }
+                    Log.i(TAG, "$fileName MD5 OK ($actual)")
+                }
 
-                    onProgress("$fileName 下载完成 (${targetFile.length() / (1024 * 1024)} MB)")
-                    Log.i(TAG, "$fileName saved to ${targetFile.absolutePath}")
-                } finally {
-                    conn.disconnect()
+                onProgress("$fileName 下载完成 (${targetFile.length() / (1024 * 1024)} MB)")
+                Log.i(TAG, "$fileName saved to ${targetFile.absolutePath}")
+            } finally {
+                conn.disconnect()
+            }
+        }
+
+        // Streaming MD5 over a file. Buffer size kept small enough to avoid
+        // memory pressure on cheaper devices while still being decently fast
+        // (~150MB/s on the test phone for the 1GB mmproj).
+        private fun computeMd5(file: File): String {
+            val md = MessageDigest.getInstance("MD5")
+            FileInputStream(file).use { input ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read <= 0) break
+                    md.update(buffer, 0, read)
                 }
             }
-
-            onProgress("所有模型文件下载完成!")
+            return md.digest().joinToString("") { "%02x".format(it) }
         }
     }
 

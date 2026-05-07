@@ -15,4 +15,7 @@
     <color name="outline">#FF79747E</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Launcher icon background (matches iOS AppIcon white canvas). -->
+    <color name="ic_launcher_background">#FFFFFFFF</color>
 </resources>
