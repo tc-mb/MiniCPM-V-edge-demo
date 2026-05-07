@@ -1,15 +1,25 @@
-# MiniCPM-V 4.0 - Deployment on iOS Device
+# MiniCPM-V Demo — iOS & Android
 
-## 1. Deploying iOS App
+This repository contains two on-device demos for MiniCPM-V (multimodal LLM) running fully locally via `llama.cpp`:
+
+* `MiniCPM-V-demo/` — iOS demo (Xcode project)
+* `MiniCPM-V-demo-Android/` — Android demo (Gradle / Kotlin)
+
+Both demos share the same `llama.cpp` submodule (branch `Support-iOS-Demo`) at the repo root.
+
+> **NOTE**: This project bundles `llama.cpp` as a git submodule. After cloning, run:
+>
+> ```bash
+> git clone https://github.com/tc-mb/MiniCPM-o-demo-iOS.git
+> cd MiniCPM-o-demo-iOS
+> git submodule update --init --recursive
+> ```
+
+---
+
+## 1. iOS Demo
 
 **NOTE: To deploy and test the app on an iOS device, you may need an Apple Developer account.**
-
-Clone our iOS demo (using `llama.cpp`) repository:
-
-```bash
-git clone https://github.com/tc-mb/MiniCPM-o-demo-iOS.git
-cd MiniCPM-o-demo-iOS
-```
 
 Install Xcode:
 
@@ -25,43 +35,55 @@ Install Xcode:
   sudo xcodebuild -license
   ```
 
-Open `MiniCPM-V-demo.xcodeproj` with Xcode. It may take a moment for Xcode to automatically download the required dependencies.
+Open `MiniCPM-V-demo/MiniCPM-V-demo.xcodeproj` with Xcode. It may take a moment for Xcode to automatically download the required dependencies.
 
 In Xcode, select the target device at the top of the window, then click the "Run" (triangle) button to launch the demo.
 
 **NOTE: If you encounter errors related to the `thirdparty/llama.xcframework` path, please follow the steps below to build the `llama.xcframework` manually.**
 
-## 2. Manually Building the llama.cpp Library From OpenBMB
+### Manually Building the llama.xcframework
 
-Clone the llama.cpp repository:
+Build directly inside the submodule (no extra clone needed):
 
 ```bash
-git clone -b Support-iOS-Demo https://github.com/tc-mb/llama.cpp.git
 cd llama.cpp
-```
-
-Build the llama.cpp library for iOS using the script:
-
-```bash
 ./build-xcframework.sh
+cp -r ./build-apple/llama.xcframework ../MiniCPM-V-demo/thirdparty
 ```
 
-Copy the built library into the corresponding directory of the iOS demo project:
+---
+
+## 2. Android Demo
+
+Requirements:
+
+* Android Studio (Giraffe or newer)
+* Android SDK + NDK (the project pins NDK `28.2.13676358` and CMake `3.22.1`)
+* A physical device with a 64-bit ARM SoC (`arm64-v8a`) and ≥ 6 GB RAM recommended
+
+Build & run:
 
 ```bash
-cp -r ./build-apple/llama.xcframework ../MiniCPM-o-demo-iOS/MiniCPM-V-demo/thirdparty
+cd MiniCPM-V-demo-Android
+./gradlew assembleDebug
 ```
+
+Or open `MiniCPM-V-demo-Android/` directly in Android Studio and click Run.
+
+The first launch will download the GGUF model files into the app's external storage. You can also sideload model files manually via `adb push` — see in-app **Model Manager** for the expected directory layout.
+
+---
 
 ## 3. GGUF Files
 
-### 1: Download Official GGUF Files
+### Option A: Download Official GGUF Files
 
 * HuggingFace: [https://huggingface.co/openbmb/MiniCPM-V-4-gguf](https://huggingface.co/openbmb/MiniCPM-V-4-gguf)
 * ModelScope: [https://modelscope.cn/models/OpenBMB/MiniCPM-V-4-gguf](https://modelscope.cn/models/OpenBMB/MiniCPM-V-4-gguf)
 
-Download the language model file (e.g., `ggml-model-Q4_0.gguf`) and the vision model file (`mmproj-model-f16-iOS.gguf`) from the repository.
+Download the language model file (e.g., `ggml-model-Q4_K_M.gguf`) and the vision model file (`mmproj-model-f16.gguf`) from the repository.
 
-### 2: Convert from PyTorch Model
+### Option B: Convert from PyTorch Model
 
 Download the MiniCPM-V-4 PyTorch model into a folder named `MiniCPM-V-4`:
 
@@ -71,6 +93,8 @@ Download the MiniCPM-V-4 PyTorch model into a folder named `MiniCPM-V-4`:
 Convert the PyTorch model to GGUF format:
 
 ```bash
+cd llama.cpp
+
 python ./tools/mtmd/legacy-models/minicpmv-surgery.py -m ../MiniCPM-V-4
 
 python ./tools/mtmd/legacy-models/minicpmv-convert-image-encoder-to-gguf.py -m ../MiniCPM-V-4 --minicpmv-projector ../MiniCPM-V-4/minicpmv.projector --output-dir ../MiniCPM-V-4/ --minicpmv_version 5
@@ -78,5 +102,5 @@ python ./tools/mtmd/legacy-models/minicpmv-convert-image-encoder-to-gguf.py -m .
 python ./convert_hf_to_gguf.py ../MiniCPM-V-4/model
 
 # int4 quantized
-./llama-quantize ../MiniCPM-V-4/model/Model-3.6B-f16.gguf ../MiniCPM-V-4/model/ggml-model-Q4_0.gguf Q4_0
+./llama-quantize ../MiniCPM-V-4/model/Model-3.6B-f16.gguf ../MiniCPM-V-4/model/ggml-model-Q4_K_M.gguf Q4_K_M
 ```
