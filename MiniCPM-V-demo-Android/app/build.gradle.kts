@@ -38,13 +38,40 @@ android {
         }
     }
 
+    // Release signing config. Credentials live in ~/.gradle/gradle.properties
+    // (outside any git repo, only readable by your local mac account).
+    // If those properties aren't set the release build still works but produces
+    // an unsigned apk - useful e.g. on CI without secrets.
+    signingConfigs {
+        create("release") {
+            val keystorePath = providers.gradleProperty("MINICPMV_KEYSTORE").orNull
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile = file(keystorePath)
+                storePassword = providers.gradleProperty("MINICPMV_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.gradleProperty("MINICPMV_KEY_ALIAS").orNull
+                keyPassword = providers.gradleProperty("MINICPMV_KEY_PASSWORD").orNull
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Keep ProGuard/R8 disabled: the app calls native JNI symbols and
+            // shrinking the Kotlin side has no measurable benefit here, while
+            // an over-aggressive shrinker is the most common cause of crashes
+            // in apps with lots of JNI bindings.
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Only attach the signing config when the keystore actually exists,
+            // so contributors without the secret can still run :assembleRelease
+            // (it'll produce an unsigned apk in that case).
+            val signingCfg = signingConfigs.getByName("release")
+            if (signingCfg.storeFile?.exists() == true) {
+                signingConfig = signingCfg
+            }
         }
     }
     compileOptions {
