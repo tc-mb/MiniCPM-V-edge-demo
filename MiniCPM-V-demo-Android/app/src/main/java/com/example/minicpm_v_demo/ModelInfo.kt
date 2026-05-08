@@ -74,7 +74,10 @@ data class ModelInfo(
                 // constant in sync with MiniCPMModelConst.swift on iOS so
                 // both clients fetch the exact same bytes.
                 ggufMd5 = "fd778481dd56b6036dd8f9cf7c1519cf",
-                mmprojMd5 = "54aea6e04d752f47309a48f12795a1a3"
+                // mmproj is converted on the Support-iOS-Demo branch (writes
+                // clip.projector_type=merger, which the demo's clip.cpp accepts);
+                // the upstream-branch conversion would write minicpmv4_6 and fail to load.
+                mmprojMd5 = "aad0d36e43a35412d72ed27a1248c7ef"
             )
         )
 

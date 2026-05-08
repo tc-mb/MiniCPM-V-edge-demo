@@ -132,8 +132,8 @@ struct MiniCPMModelConst {
     /// V4.6 mmproj 下载地址（华为云中转 OSS，objectKey 与上游 HF 一致）
     static let mmprojv46_URLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/mmproj-model-f16.gguf"
 
-    /// V4.6 mmproj md5
-    static let modelMMProjv46_MD5 = "54aea6e04d752f47309a48f12795a1a3"
+    /// V4.6 mmproj md5（demo 分支转出版本：clip.projector_type=merger，与封板 HF 权重一致）
+    static let modelMMProjv46_MD5 = "aad0d36e43a35412d72ed27a1248c7ef"
     
     
     // MARK: - MiniCPM-V 4.6 ANE 模块
@@ -157,7 +157,7 @@ struct MiniCPMModelConst {
     /// V4.6 ANE zip 下载地址
     static let mlmodelcv46_ZipFileURLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/coreml_minicpmv46_vit_all_f32.mlmodelc.zip"
 
-    /// V4.6 ANE zip md5
-    static let mlmodelcv46_ZipFileMD5 = "8d33d6a5bde87d1befa26b7ae6f7bd98"
+    /// V4.6 ANE zip md5（demo 分支重转：基于 ckpt/MiniCPM-V-4_6 封板权重 + HF 命名映射）
+    static let mlmodelcv46_ZipFileMD5 = "4ea0fbdb9b975e411b0faf478beb1d84"
     
 }
