@@ -57,21 +57,24 @@ data class ModelInfo(
                 // iOS demo's MD5 (8fc4cc88...) refers to ggml-model-Q4_0.gguf,
                 // which is a different quant from the Q4_K_M we use here.
             ),
-            // MiniCPM-V-4.6 instruct: temporary OBS direct link, identical to
-            // the iOS demo. The thinking variant is intentionally omitted for
-            // now — it still needs more validation before shipping on Android.
+            // MiniCPM-V-4.6 (release / instruct): direct OBS link, identical
+            // to the iOS demo. File names follow the upstream HF naming for
+            // the released GGUFs. ID kept as "minicpm-v-4_6-instruct" so the
+            // per-model subdirectory layout is unchanged from previous demo
+            // builds; LEGACY_FILE_RENAMES handles the old filenames.
             ModelInfo(
                 id = "minicpm-v-4_6-instruct",
-                displayName = "MiniCPM-V-4.6 instruct (Q4_K_M)",
+                displayName = "MiniCPM-V-4.6 (Q4_K_M)",
                 description = "新一代多模态模型，支持图文理解 (1.2B)",
-                ggufFileName = "minicpmv46-llm-Q4_K_M.gguf",
-                mmprojFileName = "mmproj-v46-model-f16.gguf",
-                directGgufUrl = "$V46_OBS_BASE/minicpmv46-llm-Q4_K_M.gguf",
-                directMmprojUrl = "$V46_OBS_BASE/mmproj-v46-model-f16.gguf",
-                // MD5 values copied verbatim from MiniCPMModelConst.swift to
-                // guarantee Android pulls the exact same bytes as iOS.
-                ggufMd5 = "bd9f90774f0e81c49a22ea6445e9de91",
-                mmprojMd5 = "64d56c8cc6bd59b5d94c011eb23ce777"
+                ggufFileName = "MiniCPM-V-4_6-Q4_K_M.gguf",
+                mmprojFileName = "mmproj-model-f16.gguf",
+                directGgufUrl = "$V46_OBS_BASE/MiniCPM-V-4_6-Q4_K_M.gguf",
+                directMmprojUrl = "$V46_OBS_BASE/mmproj-model-f16.gguf",
+                // MD5 values must match the OBS objects exactly; keep this
+                // constant in sync with MiniCPMModelConst.swift on iOS so
+                // both clients fetch the exact same bytes.
+                ggufMd5 = "fd778481dd56b6036dd8f9cf7c1519cf",
+                mmprojMd5 = "54aea6e04d752f47309a48f12795a1a3"
             )
         )
 

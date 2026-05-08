@@ -33,7 +33,11 @@ constexpr int   N_THREADS               = 4;
 constexpr int   DEFAULT_CONTEXT_SIZE    = 4096;
 constexpr int   OVERFLOW_HEADROOM       = 4;
 constexpr int   BATCH_SIZE              = 2048;
-constexpr float DEFAULT_SAMPLER_TEMP    = 0.5f;
+// Aligned with the model's generation_config.json (do_sample=true,
+// temperature=0.7, top_k=0, top_p=1.0, repetition_penalty=1.0). top_k=0 and
+// top_p=1.0 effectively disable those filters, so sampling is pure
+// temperature-only as the model card recommends.
+constexpr float DEFAULT_SAMPLER_TEMP    = 0.7f;
 
 static llama_model                      * g_model;
 static llama_context                    * g_context;
@@ -165,11 +169,15 @@ static llama_context *init_context(llama_model *model, const int n_ctx = DEFAULT
 }
 
 static common_sampler *new_sampler(float temp) {
+    // Match the model's generation_config defaults: pure temperature sampling
+    // with top_k / top_p disabled and no repetition penalty. Keep this in
+    // lockstep with mtmd-ios.cpp so iOS and Android produce identical
+    // distributions for a given seed.
     common_params_sampling sparams;
     sparams.temp = temp;
-    sparams.top_k = 100;
-    sparams.top_p = 0.8f;
-    sparams.penalty_repeat = 1.05f;
+    sparams.top_k = 0;            // disabled
+    sparams.top_p = 1.0f;         // disabled
+    sparams.penalty_repeat = 1.0f; // disabled
     return common_sampler_init(g_model, sparams);
 }
 

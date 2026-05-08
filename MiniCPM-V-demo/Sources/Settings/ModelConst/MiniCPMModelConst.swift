@@ -107,33 +107,33 @@ struct MiniCPMModelConst {
     
     
     // MARK: - MiniCPM-V 4.6 多模态语言模型
-    
-    /// V4.6 主模型文件名（instruct 对话版，Q4_K_M 量化）
-    static let modelv46_FileName = "minicpmv46-llm-Q4_K_M.gguf"
-    
+
+    /// V4.6 主模型文件名（落盘到 Documents/，命名带 v4.6 前缀以避免与 v2.6 / v4.0 同目录平铺时撞名）
+    static let modelv46_FileName = "MiniCPM-V-4_6-Q4_K_M.gguf"
+
     /// V4.6 显示名
     static let modelv46_DisplayedName = "MiniCPM-V 4.6 LLM INT4"
 
-    /// V4.6 主模型下载地址（临时中转 OSS，仅 TestFlight 测试期使用）
-    static let modelv46_Q4_K_M_URLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/minicpmv46-llm-Q4_K_M.gguf"
+    /// V4.6 主模型下载地址（华为云中转 OSS）
+    static let modelv46_Q4_K_M_URLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/MiniCPM-V-4_6-Q4_K_M.gguf"
 
     /// V4.6 主模型 md5
-    static let modelv46_Q4_K_M_MD5 = "bd9f90774f0e81c49a22ea6445e9de91"
-    
-    
+    static let modelv46_Q4_K_M_MD5 = "fd778481dd56b6036dd8f9cf7c1519cf"
+
+
     // MARK: - MiniCPM-V 4.6 mmproj VIT 模型
-    
-    /// V4.6 mmproj 文件名
-    static let mmprojv46_FileName = "mmproj-v46-model-f16.gguf"
-    
+
+    /// V4.6 mmproj 文件名（落盘到 Documents/，命名带 v4.6 前缀以避免与 v2.6 同名 mmproj-model-f16.gguf 撞名）
+    static let mmprojv46_FileName = "MiniCPM-V-4_6-mmproj-f16.gguf"
+
     /// V4.6 mmproj 显示名
     static let modelMMProjv46_DisplayedName = "MiniCPM-V 4.6 VPM"
 
-    /// V4.6 mmproj 下载地址
-    static let mmprojv46_URLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/mmproj-v46-model-f16.gguf"
+    /// V4.6 mmproj 下载地址（华为云中转 OSS，objectKey 与上游 HF 一致）
+    static let mmprojv46_URLString = "https://data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com/minicpmv46-instruct/mmproj-model-f16.gguf"
 
     /// V4.6 mmproj md5
-    static let modelMMProjv46_MD5 = "64d56c8cc6bd59b5d94c011eb23ce777"
+    static let modelMMProjv46_MD5 = "54aea6e04d752f47309a48f12795a1a3"
     
     
     // MARK: - MiniCPM-V 4.6 ANE 模块

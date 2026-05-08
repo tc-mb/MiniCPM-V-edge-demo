@@ -49,7 +49,9 @@ import llama
     ///   - nPredict: 预测长度，默认 100
     ///   - nCtx: 上下文长度，默认 4096
     ///   - nThreads: 线程数，默认 4
-    ///   - temperature: 温度参数，默认 0.5（业务调优最佳组合）
+    ///   - temperature: 温度参数，默认 0.7（对齐模型 generation_config.json：
+    ///     do_sample=true, temperature=0.7, top_k=0, top_p=1.0, repetition_penalty=1.0；
+    ///     top_k 与 top_p 由 mtmd-ios.cpp 内部统一设为禁用值，纯温度采样）
     ///   - useGPU: 是否使用 GPU，默认 false
     ///   - mmprojUseGPU: 多模态投影是否使用 GPU，默认 false
     ///   - warmup: 是否预热，默认 true
@@ -60,7 +62,7 @@ import llama
         nPredict: Int = 100,
         nCtx: Int = 4096,
         nThreads: Int = 4,
-        temperature: Float = 0.5,
+        temperature: Float = 0.7,
         useGPU: Bool = true,
         mmprojUseGPU: Bool = true,
         warmup: Bool = true

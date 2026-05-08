@@ -96,6 +96,12 @@ struct mtmd_context_params {
     int image_min_tokens; // minimum number of tokens for image input (default: read from metadata)
     int image_max_tokens; // maximum number of tokens for image input (default: read from metadata)
 
+    // upper bound on image slice/tile count, only used by llava-uhd style models (e.g. minicpm-v).
+    // default: -1, meaning fall back to the built-in value (currently 9 for minicpm-v).
+    // set to 1 to disable slicing entirely (single overview image, ~9x fewer tokens, much faster
+    // on mobile but loses high-resolution detail).
+    int image_max_slice_nums;
+
     // callback function passed over to mtmd proper
     ggml_backend_sched_eval_callback cb_eval;
     void * cb_eval_user_data;
@@ -131,6 +137,12 @@ MTMD_API bool mtmd_support_audio(mtmd_context * ctx);
 // get audio sample rate in Hz, for example 16000 for Whisper
 // return -1 if audio is not supported
 MTMD_API int mtmd_get_audio_sample_rate(mtmd_context * ctx);
+
+// get the MiniCPM-V family version of the loaded vision encoder.
+// returns 0 when the model is not a MiniCPM-V variant (or no vision encoder was loaded).
+// known values: 2, 3, 4, 5 (V-4.0), 6 (o-4.0), 100045 (o-4.5),
+//               46 / 460 (V-4.6 instruct) / 461 (V-4.6 thinking).
+MTMD_API int mtmd_get_minicpmv_version(mtmd_context * ctx);
 
 // mtmd_bitmap
 //

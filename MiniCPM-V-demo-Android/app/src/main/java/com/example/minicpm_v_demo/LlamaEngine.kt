@@ -100,10 +100,21 @@ class LlamaEngine private constructor(
         // different name and now need to match the iOS demo's filenames so a
         // re-push isn't required. Keyed by ModelInfo.id; values are
         // (oldName -> newName) pairs scoped to that model's sub-directory.
+        // Maps any historical filename (left) to the current canonical name
+        // (right) for files that may already exist in a user's per-model
+        // sub-directory. Each entry is consulted on app start; if a left-hand
+        // file is found it is renamed to the right-hand one. MD5 checks then
+        // either accept it or trigger a re-download. Keep the rename targets
+        // in sync with [ModelInfo.AVAILABLE_MODELS].
         private val LEGACY_FILE_RENAMES: Map<String, List<Pair<String, String>>> = mapOf(
             "minicpm-v-4_6-instruct" to listOf(
-                "MiniCPM-V4.6-instruct-Q4_K_M.gguf" to "minicpmv46-llm-Q4_K_M.gguf",
-                "mmproj-model-f16.gguf" to "mmproj-v46-model-f16.gguf"
+                // Earliest sideloaded LLM name, then our previous demo name,
+                // both rolled forward to the released HF filename.
+                "MiniCPM-V4.6-instruct-Q4_K_M.gguf" to "MiniCPM-V-4_6-Q4_K_M.gguf",
+                "minicpmv46-llm-Q4_K_M.gguf" to "MiniCPM-V-4_6-Q4_K_M.gguf",
+                // mmproj: previous demo prefixed with "v46-"; release ships
+                // the upstream "mmproj-model-f16.gguf" name.
+                "mmproj-v46-model-f16.gguf" to "mmproj-model-f16.gguf"
             )
         )
 

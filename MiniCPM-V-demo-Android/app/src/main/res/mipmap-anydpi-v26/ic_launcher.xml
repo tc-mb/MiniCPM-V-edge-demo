@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Adaptive launcher icon mirrors the iOS demo (white background + OpenBMB blue mark).
+  Adaptive launcher icon mirrors the iOS demo (white background + the MiniCPM-V brand mark).
   background    : solid white (matches iOS AppIcon canvas)
   foreground    : per-density bitmap generated from MiniCPM-V-demo/Assets.xcassets/AppIcon.appiconset/AppIcon.png
   monochrome    : reuses the foreground silhouette so themed icons (Android 13+) still recognise the mark
