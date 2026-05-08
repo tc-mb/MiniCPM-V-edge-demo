@@ -14,6 +14,10 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -50,6 +54,24 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Edge-to-edge: pad the root content for status/nav bars and the IME
+        // so the bottom input bar follows the soft keyboard up. Without this,
+        // targetSdk=35+ draws content behind the IME and the input bar gets
+        // covered.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val rootContent = findViewById<View>(android.R.id.content)
+        ViewCompat.setOnApplyWindowInsetsListener(rootContent) { v, insets ->
+            val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            v.updatePadding(
+                left = sysBars.left,
+                top = sysBars.top,
+                right = sysBars.right,
+                bottom = maxOf(sysBars.bottom, ime.bottom)
+            )
+            insets
+        }
 
         LlamaEngine.migrateLegacyLayoutIfNeeded(applicationContext)
 

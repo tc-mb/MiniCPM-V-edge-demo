@@ -15,7 +15,14 @@
 #endif
 
 static inline int minicpm_should_log(int prio) {
+#if __ANDROID_API__ >= 30
+    // Runtime-configurable threshold (e.g. via `setprop log.tag.minicpm-v VERBOSE`).
     return __android_log_is_loggable(prio, LOG_TAG, LOG_MIN_LEVEL);
+#else
+    // __android_log_is_loggable was introduced in API 30, so on older
+    // platforms fall back to the compile-time threshold.
+    return prio >= LOG_MIN_LEVEL ? 1 : 0;
+#endif
 }
 
 #if LOG_MIN_LEVEL <= ANDROID_LOG_VERBOSE

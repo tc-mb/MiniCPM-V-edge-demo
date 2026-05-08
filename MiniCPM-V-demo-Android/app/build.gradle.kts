@@ -13,7 +13,12 @@ android {
 
     defaultConfig {
         applicationId = "com.example.minicpm_v_demo"
-        minSdk = 33
+        // minSdk = 24 (Android 7.0) covers ~99% of in-use devices.
+        // The native code only requires arm64-v8a (Android 5.0+), and the
+        // app itself uses no Android 13+ APIs. The adaptive icon XML is
+        // placed under mipmap-anydpi-v26/ so pre-Oreo devices fall back
+        // to the WebP icons in mipmap-{m,h,xh,xxh,xxxh}dpi/.
+        minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
