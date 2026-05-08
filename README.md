@@ -1,4 +1,14 @@
+<<<<<<< HEAD
 # MiniCPM-V Demo — iOS & Android
+=======
+# MiniCPM-V Demo - Deployment on iOS Device
+
+This demo runs the MiniCPM-V family of multimodal models on iOS devices. Three model versions are currently supported:
+
+* **MiniCPM-V 2.6**
+* **MiniCPM-V 4.0**
+* **MiniCPM-V 4.6**
+>>>>>>> origin/main
 
 This repository contains two on-device demos for MiniCPM-V (multimodal LLM) running fully locally via `llama.cpp`:
 
@@ -68,6 +78,7 @@ cd MiniCPM-V-demo-Android
 ./gradlew assembleDebug
 ```
 
+<<<<<<< HEAD
 Or open `MiniCPM-V-demo-Android/` directly in Android Studio and click Run.
 
 The first launch will download the GGUF model files into the app's external storage. You can also sideload model files manually via `adb push` — see in-app **Model Manager** for the expected directory layout.
@@ -75,6 +86,18 @@ The first launch will download the GGUF model files into the app's external stor
 ---
 
 ## 3. GGUF Files
+=======
+## 3. MiniCPM-V 2.6 GGUF Files
+
+### 1: Download Official GGUF Files
+
+* HuggingFace: [https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf](https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf)
+* ModelScope: [https://modelscope.cn/models/OpenBMB/MiniCPM-V-2_6-gguf](https://modelscope.cn/models/OpenBMB/MiniCPM-V-2_6-gguf)
+
+Download the language model file (e.g., `ggml-model-Q4_0.gguf`) and the vision model file (`mmproj-model-f16.gguf`) from the repository.
+
+## 4. MiniCPM-V 4.0 GGUF Files
+>>>>>>> origin/main
 
 ### Option A: Download Official GGUF Files
 
@@ -104,3 +127,12 @@ python ./convert_hf_to_gguf.py ../MiniCPM-V-4/model
 # int4 quantized
 ./llama-quantize ../MiniCPM-V-4/model/Model-3.6B-f16.gguf ../MiniCPM-V-4/model/ggml-model-Q4_K_M.gguf Q4_K_M
 ```
+
+## 5. MiniCPM-V 4.6 GGUF Files
+
+### 1: Download Official GGUF Files
+
+* HuggingFace: [https://huggingface.co/openbmb/MiniCPM-V-4_6-gguf](https://huggingface.co/openbmb/MiniCPM-V-4_6-gguf)
+* ModelScope: [https://modelscope.cn/models/OpenBMB/MiniCPM-V-4_6-gguf](https://modelscope.cn/models/OpenBMB/MiniCPM-V-4_6-gguf)
+
+Download the language model file (e.g., `minicpmv46-llm-Q4_K_M.gguf`) and the vision model file (`mmproj-v46-model-f16.gguf`) from the repository.
