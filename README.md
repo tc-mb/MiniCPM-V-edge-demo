@@ -18,8 +18,8 @@ Both demos share the same `llama.cpp` submodule (branch `Support-iOS-Demo`) at t
 > **NOTE**: This project bundles `llama.cpp` as a git submodule. After cloning, run:
 >
 > ```bash
-> git clone https://github.com/tc-mb/MiniCPM-o-demo-iOS.git
-> cd MiniCPM-o-demo-iOS
+> git clone https://github.com/tc-mb/MiniCPM-V-edge-demo.git
+> cd MiniCPM-V-edge-demo
 > git submodule update --init --recursive
 > ```
 
