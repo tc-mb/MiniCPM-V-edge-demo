@@ -1,14 +1,10 @@
-<<<<<<< HEAD
 # MiniCPM-V Demo — iOS & Android
-=======
-# MiniCPM-V Demo - Deployment on iOS Device
 
 This demo runs the MiniCPM-V family of multimodal models on iOS devices. Three model versions are currently supported:
 
 * **MiniCPM-V 2.6**
 * **MiniCPM-V 4.0**
 * **MiniCPM-V 4.6**
->>>>>>> origin/main
 
 This repository contains two on-device demos for MiniCPM-V (multimodal LLM) running fully locally via `llama.cpp`:
 
@@ -78,15 +74,12 @@ cd MiniCPM-V-demo-Android
 ./gradlew assembleDebug
 ```
 
-<<<<<<< HEAD
 Or open `MiniCPM-V-demo-Android/` directly in Android Studio and click Run.
 
 The first launch will download the GGUF model files into the app's external storage. You can also sideload model files manually via `adb push` — see in-app **Model Manager** for the expected directory layout.
 
 ---
 
-## 3. GGUF Files
-=======
 ## 3. MiniCPM-V 2.6 GGUF Files
 
 ### 1: Download Official GGUF Files
@@ -97,7 +90,6 @@ The first launch will download the GGUF model files into the app's external stor
 Download the language model file (e.g., `ggml-model-Q4_0.gguf`) and the vision model file (`mmproj-model-f16.gguf`) from the repository.
 
 ## 4. MiniCPM-V 4.0 GGUF Files
->>>>>>> origin/main
 
 ### Option A: Download Official GGUF Files
 
