@@ -1,5 +1,7 @@
 # MiniCPM-V Demo — iOS & Android
 
+**English** | [中文](README_zh.md)
+
 This demo runs the MiniCPM-V family of multimodal models on iOS devices. Three model versions are currently supported:
 
 * **MiniCPM-V 2.6**
