@@ -1,19 +1,20 @@
-# MiniCPM-V Demo — iOS 与 Android
+# MiniCPM-V Demo — iOS、Android 与 HarmonyOS
 
 [English](README.md) | **中文**
 
-本项目演示了 MiniCPM-V 系列多模态模型在 iOS 与 Android 设备上的端侧本地推理。当前已支持以下三个模型版本：
+本项目演示了 MiniCPM-V 系列多模态模型在 iOS、Android 与 HarmonyOS NEXT 设备上的端侧本地推理。当前已支持以下三个模型版本：
 
 * **MiniCPM-V 2.6**
 * **MiniCPM-V 4.0**
 * **MiniCPM-V 4.6**
 
-仓库中包含两份基于 `llama.cpp` 完整本地推理的 demo：
+仓库中包含三份基于 `llama.cpp` 完整本地推理的 demo：
 
 * `MiniCPM-V-demo/` — iOS demo（Xcode 工程）
 * `MiniCPM-V-demo-Android/` — Android demo（Gradle / Kotlin）
+* `MiniCPM-V-demo-HarmonyOS/` — HarmonyOS NEXT demo（DevEco Studio / ArkTS）
 
-两端共享仓库根目录的同一份 `llama.cpp` 子模块（分支 `Support-iOS-Demo`）。
+三端共享仓库根目录的同一份 `llama.cpp` 子模块（分支 `Support-iOS-Demo`）。
 
 > **提示**：本项目通过 git submodule 引入 `llama.cpp`，clone 后请运行：
 >
@@ -82,7 +83,27 @@ cd MiniCPM-V-demo-Android
 
 ---
 
-## 3. MiniCPM-V 2.6 GGUF 模型文件
+## 3. HarmonyOS Demo
+
+环境要求：
+
+* DevEco Studio 5.0 或更新版本（含 Native SDK / NDK）
+* HarmonyOS API 12 及以上的真机或模拟器（如 nova 14 活力版 / Mate 60 / Pura 70 等）
+* 64 位 ARM 架构（`arm64-v8a`）
+
+构建并运行：
+
+1. 在 DevEco Studio 中打开 `MiniCPM-V-demo-HarmonyOS/` 目录
+2. `File` → `Project Structure` → `Signing Configs` 勾选 **Automatically generate signature**
+3. 真机连接后开启开发者模式与 USB 调试，点击 Run（绿色三角）
+
+首次启动后，进入应用内的 **模型管理** 页面点击 **下载模型**。也可以使用 `hdc file send` 旁路侧载模型文件，详见 `MiniCPM-V-demo-HarmonyOS/README_zh.md`。
+
+> 鸿蒙端 C++ 推理层与 Android、iOS 共用仓库根目录的 `llama.cpp` 子模块，模型清单 / OBS 直链 / MD5 哈希严格同源。
+
+---
+
+## 4. MiniCPM-V 2.6 GGUF 模型文件
 
 ### 1: 下载官方 GGUF 文件
 
@@ -91,7 +112,7 @@ cd MiniCPM-V-demo-Android
 
 请从仓库下载语言模型文件（例如 `ggml-model-Q4_0.gguf`）以及视觉模型文件（`mmproj-model-f16.gguf`）。
 
-## 4. MiniCPM-V 4.0 GGUF 模型文件
+## 5. MiniCPM-V 4.0 GGUF 模型文件
 
 ### 方式 A：下载官方 GGUF 文件
 
@@ -122,7 +143,7 @@ python ./convert_hf_to_gguf.py ../MiniCPM-V-4/model
 ./llama-quantize ../MiniCPM-V-4/model/Model-3.6B-f16.gguf ../MiniCPM-V-4/model/ggml-model-Q4_K_M.gguf Q4_K_M
 ```
 
-## 5. MiniCPM-V 4.6 GGUF 模型文件
+## 6. MiniCPM-V 4.6 GGUF 模型文件
 
 ### 1: 下载官方 GGUF 文件
 

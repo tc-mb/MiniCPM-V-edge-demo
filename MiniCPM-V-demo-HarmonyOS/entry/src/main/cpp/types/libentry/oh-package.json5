@@ -1,0 +1,6 @@
+{
+  "name": "libentry.so",
+  "types": "./Index.d.ts",
+  "version": "1.0.0",
+  "description": "Native bindings for the MiniCPM-V on-device demo (libentry.so)"
+}

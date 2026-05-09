@@ -1,0 +1,11 @@
+{
+  "name": "entry",
+  "version": "1.0.0",
+  "description": "MiniCPM-V end-side multimodal demo - entry module",
+  "main": "",
+  "author": "openbmb",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "libentry.so": "file:./src/main/cpp/types/libentry"
+  }
+}

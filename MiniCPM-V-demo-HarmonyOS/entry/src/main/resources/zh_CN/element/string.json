@@ -1,0 +1,7 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "MiniCPM-V 端侧多模态大模型 demo" },
+    { "name": "EntryAbility_desc", "value": "MiniCPM-V 端侧多模态大模型 demo" },
+    { "name": "EntryAbility_label", "value": "MiniCPM-V" }
+  ]
+}

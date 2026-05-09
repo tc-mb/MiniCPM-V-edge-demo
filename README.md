@@ -1,19 +1,20 @@
-# MiniCPM-V Demo — iOS & Android
+# MiniCPM-V Demo — iOS, Android & HarmonyOS
 
 **English** | [中文](README_zh.md)
 
-This demo runs the MiniCPM-V family of multimodal models on iOS devices. Three model versions are currently supported:
+This demo runs the MiniCPM-V family of multimodal models fully on-device on iOS, Android, and HarmonyOS NEXT. Three model versions are currently supported:
 
 * **MiniCPM-V 2.6**
 * **MiniCPM-V 4.0**
 * **MiniCPM-V 4.6**
 
-This repository contains two on-device demos for MiniCPM-V (multimodal LLM) running fully locally via `llama.cpp`:
+This repository contains three on-device demos for MiniCPM-V (multimodal LLM) running fully locally via `llama.cpp`:
 
 * `MiniCPM-V-demo/` — iOS demo (Xcode project)
 * `MiniCPM-V-demo-Android/` — Android demo (Gradle / Kotlin)
+* `MiniCPM-V-demo-HarmonyOS/` — HarmonyOS NEXT demo (DevEco Studio / ArkTS)
 
-Both demos share the same `llama.cpp` submodule (branch `Support-iOS-Demo`) at the repo root.
+All three demos share the same `llama.cpp` submodule (branch `Support-iOS-Demo`) at the repo root.
 
 > **NOTE**: This project bundles `llama.cpp` as a git submodule. After cloning, run:
 >
@@ -82,7 +83,27 @@ The first launch will download the GGUF model files into the app's external stor
 
 ---
 
-## 3. MiniCPM-V 2.6 GGUF Files
+## 3. HarmonyOS Demo
+
+Requirements:
+
+* DevEco Studio 5.0 or newer (with the HarmonyOS Native SDK / NDK)
+* A real device or emulator running HarmonyOS API 12+ (e.g. nova 14 vitality / Mate 60 / Pura 70)
+* 64-bit ARM architecture (`arm64-v8a`)
+
+Build & run:
+
+1. Open `MiniCPM-V-demo-HarmonyOS/` in DevEco Studio.
+2. `File` → `Project Structure` → `Signing Configs` and tick **Automatically generate signature** (requires a Huawei developer account; this only needs to be done once).
+3. Connect the device with USB debugging enabled, then click Run (the green triangle).
+
+After the first launch, open the in-app **Model Manager** and tap **Download**. You can also sideload model files via `hdc file send`; see `MiniCPM-V-demo-HarmonyOS/README_zh.md` for the expected directory layout.
+
+> The HarmonyOS port shares the exact same `llama.cpp` submodule, model catalogue, OBS direct-link URLs and MD5 hashes with the iOS / Android demos.
+
+---
+
+## 4. MiniCPM-V 2.6 GGUF Files
 
 ### 1: Download Official GGUF Files
 
@@ -91,7 +112,7 @@ The first launch will download the GGUF model files into the app's external stor
 
 Download the language model file (e.g., `ggml-model-Q4_0.gguf`) and the vision model file (`mmproj-model-f16.gguf`) from the repository.
 
-## 4. MiniCPM-V 4.0 GGUF Files
+## 5. MiniCPM-V 4.0 GGUF Files
 
 ### Option A: Download Official GGUF Files
 
@@ -122,7 +143,7 @@ python ./convert_hf_to_gguf.py ../MiniCPM-V-4/model
 ./llama-quantize ../MiniCPM-V-4/model/Model-3.6B-f16.gguf ../MiniCPM-V-4/model/ggml-model-Q4_K_M.gguf Q4_K_M
 ```
 
-## 5. MiniCPM-V 4.6 GGUF Files
+## 6. MiniCPM-V 4.6 GGUF Files
 
 ### 1: Download Official GGUF Files
 

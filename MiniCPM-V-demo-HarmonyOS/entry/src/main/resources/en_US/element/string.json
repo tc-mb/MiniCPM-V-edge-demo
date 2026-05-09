@@ -1,0 +1,7 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "MiniCPM-V on-device multimodal LLM demo" },
+    { "name": "EntryAbility_desc", "value": "MiniCPM-V on-device multimodal LLM demo" },
+    { "name": "EntryAbility_label", "value": "MiniCPM-V" }
+  ]
+}

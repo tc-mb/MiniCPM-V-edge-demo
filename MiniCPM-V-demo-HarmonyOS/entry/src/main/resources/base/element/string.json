@@ -1,0 +1,44 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "MiniCPM-V multimodal LLM on-device demo" },
+    { "name": "EntryAbility_desc", "value": "MiniCPM-V multimodal LLM on-device demo" },
+    { "name": "EntryAbility_label", "value": "MiniCPM-V" },
+
+    { "name": "permission_internet_reason", "value": "下载多模态模型文件" },
+    { "name": "permission_network_info_reason", "value": "切换 HuggingFace / ModelScope 下载源" },
+    { "name": "permission_background_reason", "value": "保持模型在前台稳定推理" },
+
+    { "name": "page_title_chat", "value": "MiniCPM-V" },
+    { "name": "page_title_model", "value": "模型管理" },
+
+    { "name": "input_hint", "value": "请输入问题..." },
+    { "name": "btn_send", "value": "发送" },
+    { "name": "btn_image", "value": "图片" },
+    { "name": "btn_clear", "value": "清空" },
+    { "name": "btn_model", "value": "模型" },
+    { "name": "btn_stop", "value": "停止生成" },
+    { "name": "btn_download", "value": "下载模型" },
+    { "name": "btn_load", "value": "加载模型" },
+    { "name": "btn_unload", "value": "卸载模型" },
+    { "name": "btn_delete", "value": "删除文件" },
+
+    { "name": "welcome_title", "value": "Welcome to MiniCPM-V" },
+    { "name": "welcome_desc", "value": "让我协助你了解知识、获得灵感、提升效率，我可以进行多轮对话与互动、根据图片给出信息并进一步解读。" },
+    { "name": "suggestion_1", "value": "请描述图片中的内容。" },
+    { "name": "suggestion_2", "value": "Describe the image." },
+
+    { "name": "status_uninitialized", "value": "未初始化" },
+    { "name": "status_initializing", "value": "正在初始化..." },
+    { "name": "status_initialized", "value": "已初始化，等待加载模型" },
+    { "name": "status_loading", "value": "正在加载模型..." },
+    { "name": "status_ready", "value": "模型已就绪" },
+    { "name": "status_generating", "value": "正在生成..." },
+    { "name": "status_downloading", "value": "正在下载模型..." },
+
+    { "name": "clear_chat", "value": "清空对话" },
+    { "name": "clear_chat_confirm", "value": "确定要清空当前对话历史吗？模型上下文将被重置。" },
+    { "name": "clear_chat_toast", "value": "对话已清空" },
+
+    { "name": "system_prompt", "value": "你是一个有用且诚实的AI助手。当用户发送图片时，请仔细观察图片内容并准确回答用户的问题。" }
+  ]
+}

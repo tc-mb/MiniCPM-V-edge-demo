@@ -1,0 +1,61 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/tianchi/.ohos/config/default_MiniCPM-V-demo-HarmonyOS_rdHwT61C4XswgeU6sy9IbB0yaSw4EcJqtZCj_vZIa6w=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B0F10B025C96B65C185D20C245A0ABC7A73DAE168877F85BAA037229DBD402FA711941C60B00E4B",
+          "profile": "/Users/tianchi/.ohos/config/default_MiniCPM-V-demo-HarmonyOS_rdHwT61C4XswgeU6sy9IbB0yaSw4EcJqtZCj_vZIa6w=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/tianchi/.ohos/config/default_MiniCPM-V-demo-HarmonyOS_rdHwT61C4XswgeU6sy9IbB0yaSw4EcJqtZCj_vZIa6w=.p12",
+          "storePassword": "0000001B098F3FC25DA41F120FBCC80EAF2961E558B6BFA8670D1DF07C62D5EE7ED02411EF0A0953D458AE"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        // SDK on this mac: HarmonyOS 6.1.0 (API 23). Device under test:
+        // nova 14 vitality (TYR-AL00) reports HarmonyOS 6.0.2.130 / API 22.
+        // We compile against the latest local SDK and keep compatibility down
+        // to API 12 so the same .hap also installs on older HarmonyOS NEXT
+        // 5.0+ phones.
+        "compatibleSdkVersion": "5.0.0(12)",
+        "compatibleSdkVersionStage": "release",
+        "targetSdkVersion": "6.1.0(23)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "useNormalizedOHMUrl": true
+          }
+        }
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug"
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}

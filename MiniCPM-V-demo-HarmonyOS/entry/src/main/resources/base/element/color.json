@@ -1,0 +1,15 @@
+{
+  "color": [
+    { "name": "start_window_background", "value": "#FFFFFFFF" },
+    { "name": "primary", "value": "#FF1976D2" },
+    { "name": "primary_container", "value": "#FFE3F2FD" },
+    { "name": "on_primary", "value": "#FFFFFFFF" },
+    { "name": "surface", "value": "#FFFFFFFF" },
+    { "name": "surface_variant", "value": "#FFF5F5F5" },
+    { "name": "on_surface", "value": "#FF1A1A1A" },
+    { "name": "on_surface_variant", "value": "#FF666666" },
+    { "name": "outline", "value": "#FFE0E0E0" },
+    { "name": "user_bubble", "value": "#FFE3F2FD" },
+    { "name": "ai_bubble", "value": "#FFF5F5F5" }
+  ]
+}

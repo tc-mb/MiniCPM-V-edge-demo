@@ -1,0 +1,7 @@
+{
+  "modelVersion": "5.0.0",
+  "description": "MiniCPM-V end-side multimodal demo for HarmonyOS NEXT",
+  "license": "Apache-2.0",
+  "devDependencies": {},
+  "dependencies": {}
+}

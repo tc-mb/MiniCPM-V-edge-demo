@@ -1,0 +1,34 @@
+{
+  "apiType": "stageMode",
+  "buildOption": {
+    "externalNativeOptions": {
+      "path": "./src/main/cpp/CMakeLists.txt",
+      "arguments": "-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DLLAMA_BUILD_COMMON=ON -DLLAMA_OPENSSL=OFF -DGGML_NATIVE=OFF -DGGML_LLAMAFILE=ON -DGGML_OPENMP=OFF -DGGML_CPU_KLEIDIAI=ON -DGGML_CPU_ARM_ARCH=armv8.2-a+dotprod+fp16",
+      "cppFlags": "",
+      "abiFilters": [ "arm64-v8a" ]
+    }
+  },
+  "buildOptionSet": [
+    {
+      "name": "release",
+      "arkOptions": {
+        "obfuscation": {
+          "ruleOptions": {
+            "enable": false
+          }
+        }
+      },
+      "nativeLib": {
+        "debugSymbol": {
+          "strip": true,
+          "exclude": []
+        }
+      }
+    }
+  ],
+  "targets": [
+    {
+      "name": "default"
+    }
+  ]
+}
