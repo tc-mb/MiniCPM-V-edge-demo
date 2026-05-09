@@ -67,7 +67,28 @@ data class ModelInfo(
                 displayName = "MiniCPM-V-4.6 (Q4_K_M)",
                 description = "新一代多模态模型，支持图文理解 (1.2B)",
                 ggufFileName = "MiniCPM-V-4_6-Q4_K_M.gguf",
-                mmprojFileName = "mmproj-model-f16.gguf",
+                // The local filename is intentionally different from the
+                // remote object on OBS. OBS still serves
+                // `mmproj-model-f16.gguf` (see [directMmprojUrl]); we save
+                // it locally as `mmproj-model-merger-f16.gguf` so that any
+                // prior demo install which already cached a stale copy of
+                // the file under the old (`mmproj-v46-model-f16.gguf`) or
+                // the current upstream (`mmproj-model-f16.gguf`) names is
+                // *not* picked up by `modelsExist()` and silently fed to
+                // the native loader. Combined with the explicit purge in
+                // [migrateLegacyLayoutIfNeeded] this guarantees a clean
+                // re-download whenever the OBS mmproj is rotated.
+                //
+                // History of OBS mmproj revisions for this slot:
+                //   - Pre-release: `mmproj-v46-model-f16.gguf`, projector
+                //     type baked in matched the demo's clip.cpp.
+                //   - Sealed (early 4.6 release): same filename but
+                //     projector type rewritten to `minicpmv4_6`, which the
+                //     demo's clip.cpp does *not* understand.
+                //   - Current: `mmproj-model-f16.gguf`, re-converted on
+                //     the demo's Support-iOS-Demo branch -> projector type
+                //     back to `merger`, loadable.
+                mmprojFileName = "mmproj-model-merger-f16.gguf",
                 directGgufUrl = "$V46_OBS_BASE/MiniCPM-V-4_6-Q4_K_M.gguf",
                 directMmprojUrl = "$V46_OBS_BASE/mmproj-model-f16.gguf",
                 // MD5 values must match the OBS objects exactly; keep this

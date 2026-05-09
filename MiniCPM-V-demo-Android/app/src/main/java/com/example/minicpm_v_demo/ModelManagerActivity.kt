@@ -1,14 +1,21 @@
 package com.example.minicpm_v_demo
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
@@ -30,6 +37,24 @@ class ModelManagerActivity : AppCompatActivity() {
     private lateinit var engine: LlamaEngine
     private lateinit var modelAdapter: ModelAdapter
 
+    // Android 13+: POST_NOTIFICATIONS is a runtime permission. We need it
+    // for the foreground download service's progress notification (without
+    // a notification the OS will outright kill the foreground service).
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            // We start the download regardless of grant: the service still
+            // posts a notification, the user just won't see it. Foreground
+            // service itself is allowed without the permission.
+            if (!granted) {
+                Toast.makeText(
+                    this,
+                    "未授权通知权限，下载会继续，但你将看不到进度通知",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            startDownloadService()
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_model_manager)
@@ -49,8 +74,9 @@ class ModelManagerActivity : AppCompatActivity() {
         setupModelList()
         updateLoadButtonState()
         observeEngineState()
+        observeDownloadStatus()
 
-        btnDownload.setOnClickListener { downloadModels() }
+        btnDownload.setOnClickListener { onDownloadClicked() }
         btnLoadModel.setOnClickListener { loadSelectedModel() }
         btnDeleteModel.setOnClickListener { confirmDeleteModel() }
     }
@@ -131,41 +157,93 @@ class ModelManagerActivity : AppCompatActivity() {
         }
     }
 
-    private fun downloadModels() {
+    private fun onDownloadClicked() {
+        if (ModelDownloadController.isRunning) {
+            Toast.makeText(this, "正在下载中...", Toast.LENGTH_SHORT).show()
+            return
+        }
         if (LlamaEngine.modelsExist(this)) {
             Toast.makeText(this, "模型文件已存在，无需重复下载", Toast.LENGTH_SHORT).show()
             return
         }
+
+        // Android 13+ needs runtime POST_NOTIFICATIONS so the foreground
+        // service notification is actually visible. Lower OS versions get
+        // the permission for free at install time and just fall through.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            return
+        }
+
+        startDownloadService()
+    }
+
+    private fun startDownloadService() {
+        // Drop any prior terminal status so the UI re-enters Running cleanly.
+        ModelDownloadController.acknowledge()
 
         btnDownload.isEnabled = false
         btnLoadModel.isEnabled = false
         progressDownload.visibility = View.VISIBLE
         tvModelStatus.text = getString(R.string.status_downloading)
 
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                LlamaEngine.downloadModels(applicationContext) { progress ->
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        tvModelStatus.text = progress
-                    }
-                }
+        ModelDownloadService.start(applicationContext)
+    }
 
-                withContext(Dispatchers.Main) {
-                    updateLoadButtonState()
-                    tvModelStatus.text = "下载完成! 请点击加载模型"
-                    Toast.makeText(this@ModelManagerActivity, "下载完成!", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Download failed", e)
-                withContext(Dispatchers.Main) {
-                    tvModelStatus.text = "下载失败: ${e.message}"
-                    Toast.makeText(this@ModelManagerActivity, "下载失败: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-            } finally {
-                withContext(Dispatchers.Main) {
-                    btnDownload.isEnabled = true
-                    progressDownload.visibility = View.GONE
-                    updateLoadButtonState()
+    /**
+     * Mirrors the foreground service's [ModelDownloadController] state into
+     * the UI. We use repeatOnLifecycle(STARTED) so we don't burn cycles
+     * collecting while the Activity is in the background, but we still
+     * pick up any progress that arrived during that window when we resume.
+     */
+    private fun observeDownloadStatus() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ModelDownloadController.status.collect { status ->
+                    when (status) {
+                        is ModelDownloadController.Status.Idle -> {
+                            progressDownload.visibility = View.GONE
+                            btnDownload.isEnabled = true
+                            updateLoadButtonState()
+                        }
+                        is ModelDownloadController.Status.Running -> {
+                            progressDownload.visibility = View.VISIBLE
+                            btnDownload.isEnabled = false
+                            btnLoadModel.isEnabled = false
+                            tvModelStatus.text = status.message
+                        }
+                        is ModelDownloadController.Status.Completed -> {
+                            progressDownload.visibility = View.GONE
+                            tvModelStatus.text = "下载完成! 请点击加载模型"
+                            Toast.makeText(this@ModelManagerActivity, "下载完成!", Toast.LENGTH_SHORT).show()
+                            btnDownload.isEnabled = true
+                            updateLoadButtonState()
+                            ModelDownloadController.acknowledge()
+                        }
+                        is ModelDownloadController.Status.Cancelled -> {
+                            progressDownload.visibility = View.GONE
+                            tvModelStatus.text = "已取消下载"
+                            btnDownload.isEnabled = true
+                            updateLoadButtonState()
+                            ModelDownloadController.acknowledge()
+                        }
+                        is ModelDownloadController.Status.Failed -> {
+                            Log.w(TAG, "Download failed: ${status.message}")
+                            progressDownload.visibility = View.GONE
+                            tvModelStatus.text = "下载失败: ${status.message}"
+                            Toast.makeText(
+                                this@ModelManagerActivity,
+                                "下载失败: ${status.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            btnDownload.isEnabled = true
+                            updateLoadButtonState()
+                            ModelDownloadController.acknowledge()
+                        }
+                    }
                 }
             }
         }

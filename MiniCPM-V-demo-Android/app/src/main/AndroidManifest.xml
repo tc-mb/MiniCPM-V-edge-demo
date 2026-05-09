@@ -5,6 +5,20 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Required for ModelDownloadService to keep the model download alive
+         when the user puts the app in the background or locks the screen.
+         FOREGROUND_SERVICE_DATA_SYNC is the Android 14+ specific subtype
+         (declared in the service tag below as foregroundServiceType). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Without this the screen-off CPU goes idle and HttpURLConnection's
+         socket eventually times out mid-transfer. PARTIAL_WAKE_LOCK is held
+         only while a download is actually in flight. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Android 13+: notification posting now requires runtime consent;
+         we ask for it the first time the user taps "下载". -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -31,6 +45,11 @@
             android:label="@string/model_management"
             android:parentActivityName=".MainActivity"
             android:windowSoftInputMode="adjustResize" />
+
+        <service
+            android:name=".ModelDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
     </application>
 
 </manifest>

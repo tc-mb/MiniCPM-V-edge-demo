@@ -109,12 +109,30 @@ class LlamaEngine private constructor(
         private val LEGACY_FILE_RENAMES: Map<String, List<Pair<String, String>>> = mapOf(
             "minicpm-v-4_6-instruct" to listOf(
                 // Earliest sideloaded LLM name, then our previous demo name,
-                // both rolled forward to the released HF filename.
+                // both rolled forward to the released HF filename. The GGUF
+                // content is byte-stable across these names (LFS-hashed on
+                // HF, MD5-pinned on OBS) so renaming is safe.
                 "MiniCPM-V4.6-instruct-Q4_K_M.gguf" to "MiniCPM-V-4_6-Q4_K_M.gguf",
-                "minicpmv46-llm-Q4_K_M.gguf" to "MiniCPM-V-4_6-Q4_K_M.gguf",
-                // mmproj: previous demo prefixed with "v46-"; release ships
-                // the upstream "mmproj-model-f16.gguf" name.
-                "mmproj-v46-model-f16.gguf" to "mmproj-model-f16.gguf"
+                "minicpmv46-llm-Q4_K_M.gguf" to "MiniCPM-V-4_6-Q4_K_M.gguf"
+                // NOTE: deliberately *not* renaming the legacy mmproj
+                // filenames here; their bytes are not necessarily compatible
+                // with the demo's current clip.cpp. They are purged outright
+                // by [STALE_MMPROJ_NAMES] below.
+            )
+        )
+
+        // For mmproj specifically we cannot trust the on-disk content of any
+        // historical filename: the OBS object behind v4.6 was rotated through
+        // multiple incompatible revisions (pre-release / sealed-minicpmv4_6 /
+        // demo-merger), so a file with one of these names may have *any* of
+        // those payloads. We therefore delete them outright on app start.
+        // Combined with the new [ModelInfo.mmprojFileName] (which is unique
+        // to the demo-merger revision), [modelsExist] will then report
+        // "missing" and the user is prompted to re-download a clean copy.
+        private val STALE_MMPROJ_NAMES: Map<String, List<String>> = mapOf(
+            "minicpm-v-4_6-instruct" to listOf(
+                "mmproj-v46-model-f16.gguf",
+                "mmproj-model-f16.gguf"
             )
         )
 
@@ -155,6 +173,28 @@ class LlamaEngine private constructor(
                         val dst = File(perModelDir, newName)
                         if (src.exists() && !dst.exists() && src.renameTo(dst)) {
                             Log.i(TAG, "Renamed legacy ${model.id}/$oldName -> $newName")
+                        }
+                    }
+                }
+
+                // Purge any stale mmproj cached under a previous filename:
+                // the OBS object behind that name has been re-converted at
+                // least once and the cached bytes may be incompatible with
+                // the demo's current clip.cpp (would crash inside
+                // mtmd_init_from_file). Companion .tmp from a partial old
+                // download is dropped too. This is intentionally one-way -
+                // we never try to "rescue" the bytes by renaming.
+                STALE_MMPROJ_NAMES[model.id]?.let { stale ->
+                    val perModelDir = File(rootDir, model.id)
+                    if (!perModelDir.exists()) return@let
+                    for (name in stale) {
+                        val f = File(perModelDir, name)
+                        if (f.exists() && f.delete()) {
+                            Log.i(TAG, "Purged stale mmproj ${model.id}/$name (incompatible OBS revision)")
+                        }
+                        val tmp = File(perModelDir, "$name.tmp")
+                        if (tmp.exists() && tmp.delete()) {
+                            Log.i(TAG, "Purged stale mmproj tmp ${model.id}/$name.tmp")
                         }
                     }
                 }
@@ -238,6 +278,17 @@ class LlamaEngine private constructor(
             }
         }
 
+        // Downloads a single file with HTTP Range-based resume. The on-disk
+        // staging file is `<fileName>.tmp`; if it already exists from a prior
+        // (interrupted) attempt we re-issue the request with `Range: bytes=N-`
+        // so the server only sends the missing tail. The .tmp file is
+        // deliberately preserved across cancellations / process death so the
+        // user can resume seamlessly the next time `downloadModels` runs.
+        //
+        // Server response handling:
+        //   - 200 OK  : server ignored Range (or .tmp was empty) -> overwrite from 0
+        //   - 206 Partial Content : append missing tail to existing .tmp
+        //   - 416 Range Not Satisfiable : .tmp is already the full file -> finalize
         private fun downloadFile(
             dir: File,
             fileName: String,
@@ -247,6 +298,7 @@ class LlamaEngine private constructor(
             onProgress: (String) -> Unit
         ) {
             val targetFile = File(dir, fileName)
+            val tmpFile = File(dir, "$fileName.tmp")
 
             // Fast path: if the file is already on disk and its hash matches,
             // skip re-downloading. Saves 500MB-1GB on app reinstall / dev
@@ -257,14 +309,26 @@ class LlamaEngine private constructor(
                 if (actual.equals(expectedMd5, ignoreCase = true)) {
                     onProgress("$fileName 已就绪 (MD5 校验通过)")
                     Log.i(TAG, "$fileName already present and MD5 matches, skipping download")
+                    // Stale .tmp from an even older interrupted attempt - drop it.
+                    if (tmpFile.exists()) tmpFile.delete()
                     return
                 }
                 Log.w(TAG, "$fileName already present but MD5 mismatch (got $actual, want $expectedMd5); re-downloading")
                 targetFile.delete()
+                // The cached .tmp (if any) belonged to a previous, mismatching
+                // version; better to start clean.
+                if (tmpFile.exists()) tmpFile.delete()
             }
 
-            onProgress("[$source] 下载 $fileName...")
-            Log.i(TAG, "Downloading $fileName from $source: $url")
+            val resumeFrom = if (tmpFile.exists()) tmpFile.length() else 0L
+            if (resumeFrom > 0) {
+                val mb = resumeFrom / (1024 * 1024)
+                onProgress("[$source] 续传 $fileName，已下 ${mb} MB...")
+                Log.i(TAG, "Resuming $fileName from $resumeFrom bytes ($source: $url)")
+            } else {
+                onProgress("[$source] 下载 $fileName...")
+                Log.i(TAG, "Downloading $fileName from $source: $url")
+            }
 
             val conn = (url.openConnection() as HttpURLConnection).apply {
                 connectTimeout = 10000
@@ -272,47 +336,93 @@ class LlamaEngine private constructor(
                 requestMethod = "GET"
                 instanceFollowRedirects = true
                 setRequestProperty("User-Agent", "MiniCPMV-demo/1.0")
+                if (resumeFrom > 0) {
+                    setRequestProperty("Range", "bytes=$resumeFrom-")
+                }
             }
 
             try {
                 val responseCode = conn.responseCode
-                if (responseCode != HttpURLConnection.HTTP_OK) {
-                    throw RuntimeException("$source returned $responseCode for $fileName")
-                }
 
-                val contentLength = conn.contentLength.toLong()
-                val tmpFile = File(dir, "$fileName.tmp")
+                // 416: server thinks we already have everything. Verify size
+                // matches Content-Range total before treating .tmp as complete.
+                if (responseCode == 416 /* RANGE_NOT_SATISFIABLE */) {
+                    val totalLen = parseContentRangeTotal(conn.getHeaderField("Content-Range"))
+                    if (totalLen != null && tmpFile.length() == totalLen) {
+                        Log.i(TAG, "$fileName: server reports complete (HTTP 416, size=$totalLen)")
+                    } else {
+                        // .tmp is somehow larger than server's file (different
+                        // mirror? truncated download earlier?). Reset.
+                        Log.w(TAG, "$fileName: HTTP 416 but local size ${tmpFile.length()} != server $totalLen; restarting")
+                        tmpFile.delete()
+                        throw RuntimeException("$source 返回 416 但本地缓存大小异常，请重试")
+                    }
+                } else {
+                    val acceptedResume = responseCode == HttpURLConnection.HTTP_PARTIAL // 206
+                    val isOk = responseCode == HttpURLConnection.HTTP_OK // 200
+                    if (!acceptedResume && !isOk) {
+                        throw RuntimeException("$source returned $responseCode for $fileName")
+                    }
 
-                conn.inputStream.use { input ->
-                    FileOutputStream(tmpFile).use { output ->
-                        val buffer = ByteArray(8192)
-                        var totalRead = 0L
-                        var lastProgressTime = 0L
+                    // 200 means the server didn't honor Range - either we asked
+                    // for bytes=0- (then 200/206 are equivalent), or the server
+                    // doesn't support ranges. Either way, restart from 0.
+                    if (isOk && resumeFrom > 0) {
+                        Log.w(TAG, "$fileName: server returned 200 instead of 206; restarting from 0")
+                        if (tmpFile.exists()) tmpFile.delete()
+                    }
 
-                        while (true) {
-                            val read = input.read(buffer)
-                            if (read == -1) break
-                            output.write(buffer, 0, read)
-                            totalRead += read
+                    val effectiveStart = if (acceptedResume) resumeFrom else 0L
+                    val remaining = conn.contentLength.toLong() // -1 if unknown
+                    val totalSize = if (remaining > 0) remaining + effectiveStart else -1L
 
-                            val now = System.currentTimeMillis()
-                            if (now - lastProgressTime > 500) {
-                                lastProgressTime = now
-                                val progress = if (contentLength > 0) {
-                                    val pct = totalRead * 100 / contentLength
-                                    val mb = totalRead / (1024 * 1024)
-                                    val totalMb = contentLength / (1024 * 1024)
-                                    "$fileName: $pct% ($mb/$totalMb MB)"
-                                } else {
-                                    val mb = totalRead / (1024 * 1024)
-                                    "$fileName: $mb MB downloaded"
+                    conn.inputStream.use { input ->
+                        // append=true only when we actually got 206 and are
+                        // continuing the existing .tmp; otherwise truncate.
+                        FileOutputStream(tmpFile, acceptedResume && resumeFrom > 0).use { output ->
+                            val buffer = ByteArray(64 * 1024)
+                            var totalRead = effectiveStart
+                            var lastProgressTime = 0L
+
+                            while (true) {
+                                val read = input.read(buffer)
+                                if (read == -1) break
+                                output.write(buffer, 0, read)
+                                totalRead += read
+
+                                val now = System.currentTimeMillis()
+                                if (now - lastProgressTime > 500) {
+                                    lastProgressTime = now
+                                    val progress = if (totalSize > 0) {
+                                        val pct = totalRead * 100 / totalSize
+                                        val mb = totalRead / (1024 * 1024)
+                                        val totalMb = totalSize / (1024 * 1024)
+                                        "$fileName: $pct% ($mb/$totalMb MB)"
+                                    } else {
+                                        val mb = totalRead / (1024 * 1024)
+                                        "$fileName: $mb MB downloaded"
+                                    }
+                                    onProgress(progress)
                                 }
-                                onProgress(progress)
+                            }
+                            output.flush()
+                            // fd.sync() ensures bytes hit the storage device
+                            // before we trust the .tmp size for the next
+                            // resume attempt. It's cheap relative to a 1GB
+                            // download but, on some Android devices/FS
+                            // combinations, can throw SyncFailedException -
+                            // wrap it so a fsync hiccup doesn't fail an
+                            // otherwise-fine download.
+                            try {
+                                output.fd.sync()
+                            } catch (e: Throwable) {
+                                Log.w(TAG, "fsync failed for $fileName (continuing): ${e.message}")
                             }
                         }
                     }
                 }
 
+                // Promote .tmp -> final.
                 if (targetFile.exists()) targetFile.delete()
                 if (!tmpFile.renameTo(targetFile)) {
                     tmpFile.copyTo(targetFile, overwrite = true)
@@ -324,7 +434,10 @@ class LlamaEngine private constructor(
                     val actual = computeMd5(targetFile)
                     if (!actual.equals(expectedMd5, ignoreCase = true)) {
                         Log.e(TAG, "$fileName MD5 mismatch: expected $expectedMd5, got $actual")
+                        // Bad payload -> drop both the final and any (stale)
+                        // .tmp so the next retry restarts cleanly.
                         targetFile.delete()
+                        if (tmpFile.exists()) tmpFile.delete()
                         throw RuntimeException(
                             "$fileName MD5 校验失败 (期望 $expectedMd5, 实际 $actual)，文件已删除，请重试"
                         )
@@ -336,7 +449,19 @@ class LlamaEngine private constructor(
                 Log.i(TAG, "$fileName saved to ${targetFile.absolutePath}")
             } finally {
                 conn.disconnect()
+                // Note: we deliberately do NOT delete tmpFile in catch-all -
+                // a transient network error / process kill should leave the
+                // partial bytes on disk so the next call can resume.
             }
+        }
+
+        // Parse the "*/<total>" suffix out of a Content-Range header.
+        // Returns null if header is missing or malformed.
+        private fun parseContentRangeTotal(header: String?): Long? {
+            if (header.isNullOrEmpty()) return null
+            val slash = header.lastIndexOf('/')
+            if (slash < 0 || slash == header.length - 1) return null
+            return header.substring(slash + 1).trim().toLongOrNull()
         }
 
         // Streaming MD5 over a file. Buffer size kept small enough to avoid
