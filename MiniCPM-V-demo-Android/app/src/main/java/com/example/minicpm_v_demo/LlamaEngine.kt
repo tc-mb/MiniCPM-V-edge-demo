@@ -50,8 +50,15 @@ class LlamaEngine private constructor(
         @Volatile
         private var instance: LlamaEngine? = null
 
-        // Per-turn token budget. Mirrors iOS demo MTMDParams.swift (nPredict = 100).
-        const val DEFAULT_PREDICT_LENGTH = 100
+        // Per-turn token budget. iOS demo (MTMDParams.swift) uses 100 because
+        // ANE makes generation fast enough that the cap is rarely hit; on
+        // Android with CPU-only inference users complained about replies
+        // getting truncated mid-sentence, so we raise it to a safer ceiling.
+        // 512 tokens is roughly 250-350 Chinese characters per turn, which
+        // covers the vast majority of single-turn answers; the n_ctx=4096
+        // buffer plus shift_context() in llama_jni.cpp still keeps multi-turn
+        // chats stable.
+        const val DEFAULT_PREDICT_LENGTH = 512
 
         const val MODEL_SUBDIR = "models"
 
