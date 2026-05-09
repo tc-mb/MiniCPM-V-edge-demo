@@ -254,18 +254,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadDefaultModel() {
-        val modelPath = LlamaEngine.modelPath(applicationContext)
-        val mmprojPath = LlamaEngine.mmprojPath(applicationContext)
+        val ctx = applicationContext
+        val ggufFile = File(LlamaEngine.modelPath(ctx))
+        val mmprojFile = File(LlamaEngine.mmprojPath(ctx))
 
-        if (!File(modelPath).exists()) {
-            Toast.makeText(this, "模型文件不存在，请先下载", Toast.LENGTH_LONG).show()
+        // Both files must be on-disk before we even try to load. Falling back
+        // to a text-only load when mmproj is missing is the wrong default for
+        // this demo: vision is the marquee feature, and silently disabling
+        // the image button leaves the user wondering why "新装的 apk 点不开
+        // 图片". Common trigger is `migrateLegacyLayoutIfNeeded` having just
+        // purged a stale mmproj after an APK upgrade - in that case the user
+        // needs to re-download from "模型管理".
+        if (!ggufFile.exists() || !mmprojFile.exists()) {
+            promptDownloadModels(
+                ggufMissing = !ggufFile.exists(),
+                mmprojMissing = !mmprojFile.exists()
+            )
             return
         }
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val mmprojFile = File(mmprojPath)
-                engine.loadModel(modelPath, if (mmprojFile.exists()) mmprojPath else null)
+                engine.loadModel(ggufFile.absolutePath, mmprojFile.absolutePath)
                 engine.setSystemPrompt("你是一个有用且诚实的AI助手。当用户发送图片时，请仔细观察图片内容并准确回答用户的问题。")
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading model", e)
@@ -276,6 +286,32 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun promptDownloadModels(ggufMissing: Boolean, mmprojMissing: Boolean) {
+        val message = when {
+            ggufMissing && mmprojMissing ->
+                "未检测到模型文件。请前往“模型管理”下载后再使用。"
+            mmprojMissing ->
+                "本次升级更新了图像模型（mmproj）。\n请前往“模型管理”重新下载，否则无法使用图片识别功能。"
+            else ->
+                "模型文件不完整。请前往“模型管理”重新下载。"
+        }
+        AlertDialog.Builder(this)
+            .setTitle("需要下载模型")
+            .setMessage(message)
+            .setCancelable(false)
+            .setPositiveButton("去下载") { _, _ ->
+                startActivity(Intent(this, ModelManagerActivity::class.java))
+            }
+            .setNegativeButton("稍后") { _, _ ->
+                Toast.makeText(
+                    this,
+                    "可随时点击右上角“模型管理”按钮下载",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            .show()
     }
 
     private val getImage = registerForActivityResult(

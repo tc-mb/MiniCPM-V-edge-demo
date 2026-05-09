@@ -226,12 +226,19 @@ static void reset_long_term_states(const bool clear_kv_cache = true) {
 // uses enable_thinking=false and embeds the empty <think>...</think> block
 // directly so the model emits the response right after; v4.6-thinking lets
 // the model produce its own thinking; v4.0 / v2.x use plain ChatML.
+//
+// Note: convert_hf_to_gguf.py currently hard-codes clip.minicpmv_version = 46
+// for ALL MiniCPM-V 4.6 mmproj (does not differentiate instruct/thinking).
+// Since this demo only ships the instruct variant, we treat 46 as instruct
+// to match the iOS path (which hard-codes the instruct prefix unconditionally).
+// If a thinking-flavored mmproj is ever shipped, it should write 461 to
+// avoid this collision.
 static const char * assistant_turn_prefix() {
     switch (g_minicpmv_version) {
+        case 46:  // MiniCPM-V-4.6 (default tag from convert_hf_to_gguf.py; treated as instruct)
         case 460: // MiniCPM-V-4.6 instruct (enable_thinking = false)
             return "<|im_start|>assistant\n<think>\n\n</think>\n\n";
         case 461: // MiniCPM-V-4.6 thinking (model emits its own <think>...</think>)
-        case 46:  // legacy 4.6 alias
             return "<|im_start|>assistant\n";
         default:
             return "<|im_start|>assistant\n";
