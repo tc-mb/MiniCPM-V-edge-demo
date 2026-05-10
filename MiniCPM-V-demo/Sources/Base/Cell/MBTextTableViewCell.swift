@@ -290,7 +290,13 @@ class MBTextTableViewCell: UITableViewCell {
     public func bindTextWith(data: MBChatModel?) {
         model = data
         
-        if let text = model?.contentText {
+        if let rawText = model?.contentText {
+            // v4.6 sometimes emits Markdown break sequences as the literal
+            // two-character escape `\n` instead of real newlines. Normalize
+            // for *display only* here (model?.contentText keeps the raw
+            // bytes so multi-turn / regenerate / copy-from-context paths see
+            // exactly what the model produced). See MarkdownEscape.swift.
+            let text = MarkdownEscape.normalizeResponseText(rawText)
             
             let para = NSMutableParagraphStyle()
             para.maximumLineHeight = 22
@@ -460,7 +466,12 @@ class MBTextTableViewCell: UITableViewCell {
     
     /// 计算 cell 高度
     public static func calcCellHeight(data: MBChatModel?, viewWidth: CGFloat) -> CGFloat {
-        if let text = data?.contentText {
+        if let rawText = data?.contentText {
+            // Mirror the display-side normalization in bindTextWith so the
+            // measured height matches the rendered glyph layout (otherwise
+            // v4.6 outputs with literal `\n` would measure as one short
+            // line and clip when the text actually expands across many).
+            let text = MarkdownEscape.normalizeResponseText(rawText)
             
             let para = NSMutableParagraphStyle()
             para.maximumLineHeight = 22

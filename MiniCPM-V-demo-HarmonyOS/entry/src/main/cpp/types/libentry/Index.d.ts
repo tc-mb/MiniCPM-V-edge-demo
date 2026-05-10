@@ -8,7 +8,14 @@
 
 export const init: (nativeLibDir: string) => void;
 export const load: (modelPath: string) => number;
-export const loadMmproj: (mmprojPath: string) => number;
+// imageMaxSliceNums: 1..9 inclusive (or -1 for the model default).  See
+// llama_napi.cpp::LoadMmproj for semantics.  Persisted by the chat-page
+// slider; defaults to 9 (MiniCPM-V upper bound, best detail) on first
+// launch.  Drag the slider down to 1 for single-overview / fastest.
+export const loadMmproj: (mmprojPath: string, imageMaxSliceNums: number) => number;
+// Live override of the slice cap.  No mmproj reload required - takes
+// effect from the next image encode onwards.
+export const setImageMaxSliceNums: (n: number) => void;
 export const prepare: () => number;
 export const systemInfo: () => string;
 export const processSystemPrompt: (prompt: string) => number;

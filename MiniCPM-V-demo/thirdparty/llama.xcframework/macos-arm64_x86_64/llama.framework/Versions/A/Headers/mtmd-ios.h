@@ -23,6 +23,10 @@ typedef struct mtmd_ios_params {
     bool        use_gpu;
     bool        mmproj_use_gpu;
     bool        warmup;
+    // Upper bound on image slice/tile count for llava-uhd style models
+    // (MiniCPM-V). -1 = use model default (9 for MiniCPM-V).
+    // 1 = no slicing (single overview image, much faster).
+    int         image_max_slice_nums;
 } mtmd_ios_params;
 
 // Loop return value structure (C++ only)
@@ -82,6 +86,13 @@ void mtmd_ios_string_free(char * str);
 // Parameters:
 // ctx: context
 bool mtmd_ios_clean_kv_cache(mtmd_ios_context * ctx);
+
+// Runtime override of the maximum number of image slices/tiles used by
+// llava-uhd style pre-processing (MiniCPM-V).  Pass -1 to revert to the
+// model default (9 for MiniCPM-V), or 1 to disable slicing entirely
+// (single overview image, much faster on mobile but loses fine detail).
+// Safe to call between images.
+void mtmd_ios_set_image_max_slice_nums(mtmd_ios_context * ctx, int n);
 
 #ifdef __cplusplus
 }

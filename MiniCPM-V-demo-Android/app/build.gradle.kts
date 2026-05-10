@@ -109,6 +109,9 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    // Markdown rendering for AI streaming responses (headings, bold, lists, code, etc.)
+    implementation("io.noties.markwon:core:4.6.2")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

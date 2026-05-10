@@ -106,62 +106,79 @@ public class MTMDWrapper: ObservableObject {
         }
     }
 
+    /// addImageInBackground / addFrameInBackground 默认超时（秒）。
+    ///
+    /// MiniCPM-V 4.6 + 9 切片 + 首次 ANE 编译，最坏路径在老设备上也通常 < 60s。
+    /// 给 180s 是为了"宁可慢但保住功能"，超过这个时间几乎一定是 ANE driver
+    /// 卡住或者磁盘 IO 卡住，应当上报失败让 UI 兜底。
+    public static let defaultPrefillTimeoutSeconds: TimeInterval = 180
+
     /// 在后台线程中添加图片（非 @MainActor 版本）
-    /// - Parameter imagePath: 图片路径
-    public func addImageInBackground(_ imagePath: String) async throws {
+    /// - Parameters:
+    ///   - imagePath: 图片路径
+    ///   - timeoutSeconds: 等待 mtmd_ios_prefill_image 的最长时间。超时即抛
+    ///     `MTMDError.timeout`，让上层（cell 进度条 / "预处理耗时" 文本）能
+    ///     走兜底分支，而不是永远卡在没有耗时的状态。
+    ///     注意：由于 C++ 同步 API 没法被中断，超时后底层调用仍会在后台跑完，
+    ///     但 Swift 这边已经放手，UI 不再被它绑住。
+    public func addImageInBackground(_ imagePath: String,
+                                     timeoutSeconds: TimeInterval = MTMDWrapper.defaultPrefillTimeoutSeconds) async throws {
         guard initializationState == .initialized else {
             throw MTMDError.contextNotInitialized
         }
-        
+
         guard let ctx = context else {
             throw MTMDError.contextNotInitialized
         }
-        
-        // 在后台线程执行 C 函数调用
-        return try await withCheckedThrowingContinuation { continuation in
+
+        try await runWithWatchdog(
+            timeoutSeconds: timeoutSeconds,
+            timeoutMessage: "addImageInBackground timed out after \(Int(timeoutSeconds))s (image=\(imagePath))"
+        ) { resumeOnce in
             DispatchQueue.global(qos: .userInitiated).async {
                 let result = mtmd_ios_prefill_image(ctx, std.string(imagePath))
-                
+
                 if result != 0 {
                     let errorMessage = mtmd_ios_get_last_error(ctx)
                     let error = errorMessage != nil ? String(cString: errorMessage!) : "Unknown error"
                     print("MTMDWrapper: addImageInBackground failed, imagePath=\(imagePath), error=\(error)")
-                    continuation.resume(throwing: MTMDError.imageLoadFailed(error))
+                    resumeOnce(.failure(MTMDError.imageLoadFailed(error)))
                 } else {
-                    // 回到主线程更新状态
                     Task { @MainActor in
                         self.hasContent = true
-                        continuation.resume()
+                        resumeOnce(.success(()))
                     }
                 }
             }
         }
     }
 
-    public func addFrameInBackground(_ imagePath: String) async throws {
+    public func addFrameInBackground(_ imagePath: String,
+                                     timeoutSeconds: TimeInterval = MTMDWrapper.defaultPrefillTimeoutSeconds) async throws {
         guard initializationState == .initialized else {
             throw MTMDError.contextNotInitialized
         }
-        
+
         guard let ctx = context else {
             throw MTMDError.contextNotInitialized
         }
-        
-        // 在后台线程执行 C 函数调用
-        return try await withCheckedThrowingContinuation { continuation in
+
+        try await runWithWatchdog(
+            timeoutSeconds: timeoutSeconds,
+            timeoutMessage: "addFrameInBackground timed out after \(Int(timeoutSeconds))s (frame=\(imagePath))"
+        ) { resumeOnce in
             DispatchQueue.global(qos: .userInitiated).async {
                 let result = mtmd_ios_prefill_frame(ctx, std.string(imagePath))
-                
+
                 if result != 0 {
                     let errorMessage = mtmd_ios_get_last_error(ctx)
                     let error = errorMessage != nil ? String(cString: errorMessage!) : "Unknown error"
                     print("MTMDWrapper: addFrameInBackground failed, imagePath=\(imagePath), error=\(error)")
-                    continuation.resume(throwing: MTMDError.imageLoadFailed(error))
+                    resumeOnce(.failure(MTMDError.imageLoadFailed(error)))
                 } else {
-                    // 回到主线程更新状态
                     Task { @MainActor in
                         self.hasContent = true
-                        continuation.resume()
+                        resumeOnce(.success(()))
                     }
                 }
             }
@@ -239,6 +256,22 @@ public class MTMDWrapper: ObservableObject {
         print("MTMDWrapper: 生成已停止")
     }
     
+    /// 运行时调整单张图最大切片数（无需 reload mmproj）。
+    ///
+    /// clip 在每张图编码时都会重新读取 hparams.custom_image_max_slice_nums，
+    /// 所以这里只是把新值写入上下文，下一张图自然就用新档位生效。
+    /// - Parameter n: 1 表示不切图（最快），9 表示 MiniCPM-V 模型上限（最清晰）。
+    ///                传 -1 等价于"按模型默认"。
+    public func setImageMaxSliceNums(_ n: Int) {
+        guard let ctx = context else {
+            // 还没 init 完，下一次 initialize() 会通过 MTMDParams 把值带进去。
+            print("MTMDWrapper: setImageMaxSliceNums 调用时上下文未就绪，nop")
+            return
+        }
+        mtmd_ios_set_image_max_slice_nums(ctx, Int32(n))
+        print("MTMDWrapper: image_max_slice_nums 已切换为 \(n)")
+    }
+
     /// 重置上下文
     public func reset() async {
         stopGeneration()
@@ -317,6 +350,59 @@ public class MTMDWrapper: ObservableObject {
         }
     }
     
+    /// 给同步阻塞型 C 调用包一层 watchdog 超时。
+    ///
+    /// 这里的 contract：
+    /// - `body` 一定要在某个后台线程上启动 C 调用，并把它的成功 / 失败用
+    ///   `resumeOnce` 上报。`resumeOnce` 自带 idempotency，多次调用只生效首次。
+    /// - watchdog 在 `timeoutSeconds` 后会再调 `resumeOnce(.failure(.timeout))`，
+    ///   如果 body 的 success / failure 已经先到，watchdog 是 no-op。
+    /// - 反过来如果 watchdog 先到，body 后到的 resumeOnce 是 no-op，但 C 调用
+    ///   仍会在后台跑完。这是有意为之 —— 我们没法中断同步 C API，但至少不
+    ///   让 UI 永远等。下一次进入会先 `mtmd_ios_clean_kv_cache` / reset，
+    ///   被孤儿化的那次推理对状态没有持续污染。
+    private func runWithWatchdog(
+        timeoutSeconds: TimeInterval,
+        timeoutMessage: String,
+        body: @escaping (@escaping (Result<Void, Error>) -> Void) -> Void
+    ) async throws {
+        // 把 idempotent 的 resume 状态寄存到一个引用类型上（class wrapper），
+        // 避免在 @escaping 闭包之间共享 var 导致的 Sendable 警告。
+        final class ResumeState {
+            let lock = NSLock()
+            var didResume = false
+        }
+        let state = ResumeState()
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let resumeOnce: (Result<Void, Error>) -> Void = { result in
+                state.lock.lock()
+                if state.didResume {
+                    state.lock.unlock()
+                    return
+                }
+                state.didResume = true
+                state.lock.unlock()
+
+                switch result {
+                case .success:
+                    continuation.resume()
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+
+            body(resumeOnce)
+
+            // watchdog：用 utility QoS 的全局队列，避免抢占 userInitiated。
+            // 时机点过了就触发 timeout，但如果 worker 已经先 resume，
+            // resumeOnce 会自动 no-op。
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeoutSeconds) {
+                resumeOnce(.failure(MTMDError.timeout(timeoutMessage)))
+            }
+        }
+    }
+
     /// 更新初始化状态
     private func updateInitializationState(_ state: MTMDInitializationState) {
         initializationState = state

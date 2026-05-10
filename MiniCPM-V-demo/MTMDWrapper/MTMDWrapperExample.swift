@@ -142,9 +142,19 @@ public class MTMDWrapperExample: ObservableObject {
                 }
             }
             
-            let params = MTMDParams.default(modelPath: finalModelPath, mmprojPath: finalMmprojPath, coremlPath: finalCoremlPath)
+            // Seed the slice cap from the persisted user preference so
+            // the new mtmd_context picks it up on init.  Live updates
+            // afterwards go through `setImageMaxSliceNums` (no reload).
+            let sliceCap = ImageSliceSetting.current
+            let params = MTMDParams(
+                modelPath: finalModelPath,
+                mmprojPath: finalMmprojPath,
+                coremlPath: finalCoremlPath,
+                imageMaxSliceNums: sliceCap
+            )
             self.params = params
             try await mtmdWrapper.initialize(with: params)
+            print("MTMDWrapperExample: image_max_slice_nums = \(sliceCap)")
             print("初始化成功, CoreML: \(finalCoremlPath.isEmpty ? "未启用" : "已启用")")
             self.multiModelLoadingSuccess = true
         } catch {
@@ -165,6 +175,22 @@ public class MTMDWrapperExample: ObservableObject {
                 errorMessage = "图片添加失败: \(error.localizedDescription)"
             }
             return false
+        }
+    }
+
+    /// 与 `addImageInBackground` 相同，但把底层错误透传给调用方。
+    ///
+    /// 用在需要根据「成功 / 失败 / 超时」分别在 UI 上写不同 performLog 的场景
+    /// （见 MBHomeViewController+ImageProcess.swift 的 prepareLoadModelAddImageToCell）。
+    /// 老的 Bool 版本仍然保留，避免影响 video / live-stream 调用方。
+    public func addImageInBackgroundThrowing(_ imagePath: String) async throws {
+        do {
+            try await mtmdWrapper.addImageInBackground(imagePath)
+        } catch {
+            await MainActor.run {
+                errorMessage = "图片添加失败: \(error.localizedDescription)"
+            }
+            throw error
         }
     }
 
@@ -226,6 +252,19 @@ public class MTMDWrapperExample: ObservableObject {
         outputText = ""
         errorMessage = ""
         print("已重置")
+    }
+
+    /// Persist + live-apply the user's chosen slice cap.  Safe to call
+    /// before init: the value is stored in UserDefaults and seeded into
+    /// MTMDParams on the next initialize().
+    public func updateImageMaxSliceNums(_ n: Int) {
+        ImageSliceSetting.update(n)
+        if multiModelLoadingSuccess {
+            mtmdWrapper.setImageMaxSliceNums(n)
+            print("MTMDWrapperExample: live-updated image_max_slice_nums = \(n)")
+        } else {
+            print("MTMDWrapperExample: image_max_slice_nums = \(n) persisted; will apply on next init")
+        }
     }
 }
 

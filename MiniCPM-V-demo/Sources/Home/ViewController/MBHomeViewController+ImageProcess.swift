@@ -9,6 +9,18 @@ import Foundation
 import UIKit
 import HXPhotoPicker
 
+/// 图片 prefill 阶段的最终 UI 状态。
+///
+/// 用来在 prepareLoadModelAddImageToCell 的兜底分支里区分"成功 / 超时 /
+/// 失败 / 跳过"，分别在 cell 的 performLog 里写不同文案。把这个 enum 抽到
+/// extension 外面，避免和 MBHomeViewController 类体里的其它 nested type 冲突。
+enum ImagePrefillUIStatus {
+    case succeeded
+    case timeout
+    case failed(String)
+    case skipped
+}
+
 extension MBHomeViewController {
 
     // MARK: - 图片 embed & clip
@@ -23,63 +35,89 @@ extension MBHomeViewController {
         Task.detached(priority: .userInitiated) {
             // 一次只加载一张图片并让模型 embedding 完成后，才能再加载另一张图片；
             if await !self.uploadSingleImageToModel {
-                
-                // 开始记录 image embedding 的时间
+
                 await self.startLogTimer()
-                
-                // part.2 调用 v4 新方法，也是图片处理的方法进行图片 embed
+
+                // 用枚举把 prefill 的最终状态记下来，由 finalize 兜底统一刷 UI。
+                // 这样无论 await 抛错（ANE 加载失败）还是超时（CoreML hang），
+                // cell 上一定会被更新成可读的状态，不会停在"图片有但没耗时"。
+                var status: ImagePrefillUIStatus = .skipped
+
                 if let imgPath = await self.outputImageURL?.path {
-                    // 在后台线程中执行 addImage 操作，避免阻塞主线程
-                    let ret = await self.mtmdWrapperExample?.addImageInBackground(imgPath) ?? false
-                    print("[UI]addImage: \(imgPath) ret = \(ret)")
-                }
-                
-                // part.7 更新 UI, embedding 图片的耗时
-                DispatchQueue.main.async {
-                    
-                    // 这是总耗时的时候长（包括 embedding(:) 和 process_input(:) 这两个步骤）
-                    let lastLogTime = self.logTimeSecond
-                    
-                    // 初始化完成，停止性能日志定时器
-                    self.stopLogTimer()
-                    
-                    // 记录日志
-                    if self.dataArray.count > 0,
-                       let latestCell = self.tableView.cellForRow(at: IndexPath(row: self.dataArray.count - 1, section: 0)) as? MBImageTableViewCell {
-                        if latestCell.model?.role == "user",
-                           latestCell.model?.contentImage != nil {
-                            
-                            var size = "0 KB"
-                            if self.outputImageFileSize > 0 {
-                                if self.outputImageFileSize / 1000 < 1000 {
-                                    size = String(format: "%.0f KB", ceil(Double(self.outputImageFileSize) / 1000.0))
-                                } else {
-                                    size = String(format: "%.0f MB", ceil(Double(self.outputImageFileSize) / 1000.0 / 1000.0))
-                                }
-                            }
-                            
-                            // 格式化耗时显示，logTimeSecond 是以 0.1 秒为单位，需要转换为秒
-                            let timeInSeconds = String(format: "%.1f", lastLogTime)
-                            var perfLog: String = ""
-                            perfLog = "\t\t预处理耗时：\(timeInSeconds)s"
-                            
-                            // 处理完成后，这个值总是 -1
-                            latestCell.model?.processProgress = -1
-                            
-                            latestCell.model?.performLog = "\(Int(self.outputImageView.image?.size.width ?? 0))x\(Int(self.outputImageView.image?.size.height ?? 0)) (\(size)) \(perfLog)"
-                            latestCell.bindImageWith(data: latestCell.model)
+                    do {
+                        if let example = await self.mtmdWrapperExample {
+                            try await example.addImageInBackgroundThrowing(imgPath)
+                            status = .succeeded
+                            print("[UI]addImage: \(imgPath) ok")
+                        } else {
+                            status = .failed("MTMD wrapper not ready")
                         }
+                    } catch let MTMDError.timeout(msg) {
+                        status = .timeout
+                        print("[UI]addImage timeout: \(msg)")
+                    } catch {
+                        status = .failed(error.localizedDescription)
+                        print("[UI]addImage error: \(error)")
                     }
-                    
-                    // 使用过一次就清除
-                    self.outputImageView.image = nil
                 }
-                
-                
+
+                await self.finalizeImagePrefillUI(status: status)
             }
-            
         }
-        
+    }
+
+    /// 统一把 prefill 结束后的 UI 兜底刷新出来：
+    /// - stopLogTimer
+    /// - 写 cell 的 performLog（成功展示耗时；失败 / 超时显式提示用户）
+    /// - 清掉 outputImageView 的预览图
+    ///
+    /// 这是一个 @MainActor 函数，所有 UI 操作都在 main 上跑。
+    @MainActor
+    func finalizeImagePrefillUI(status: ImagePrefillUIStatus) {
+        // 先把 timer 跑过的真实秒数读出来，stopLogTimer 不再清零这个值。
+        let lastLogTime = self.logTimeSecond
+        self.stopLogTimer()
+
+        if self.dataArray.count > 0,
+           let latestCell = self.tableView.cellForRow(at: IndexPath(row: self.dataArray.count - 1, section: 0)) as? MBImageTableViewCell {
+            if latestCell.model?.role == "user",
+               latestCell.model?.contentImage != nil {
+
+                var size = "0 KB"
+                if self.outputImageFileSize > 0 {
+                    if self.outputImageFileSize / 1000 < 1000 {
+                        size = String(format: "%.0f KB", ceil(Double(self.outputImageFileSize) / 1000.0))
+                    } else {
+                        size = String(format: "%.0f MB", ceil(Double(self.outputImageFileSize) / 1000.0 / 1000.0))
+                    }
+                }
+
+                // 不同状态下渲染不同的 perfLog 文案。timeout / failed 用更显眼
+                // 的文案让用户直观感知到 ANE / CoreML 出问题了，而不是"卡住没反应"。
+                let perfLog: String
+                switch status {
+                case .succeeded:
+                    let timeInSeconds = String(format: "%.1f", lastLogTime)
+                    perfLog = "\t\t预处理耗时：\(timeInSeconds)s"
+                case .timeout:
+                    perfLog = "\t\t预处理超时（>\(Int(MTMDWrapper.defaultPrefillTimeoutSeconds))s）"
+                case .failed(let reason):
+                    let trimmed = reason.count > 24 ? String(reason.prefix(24)) + "…" : reason
+                    perfLog = "\t\t预处理失败：\(trimmed)"
+                case .skipped:
+                    perfLog = "\t\t预处理已跳过"
+                }
+
+                // 处理完成后，这个值总是 -1（让进度条收尾到 100%）
+                latestCell.model?.processProgress = -1
+
+                latestCell.model?.performLog = "\(Int(self.outputImageView.image?.size.width ?? 0))x\(Int(self.outputImageView.image?.size.height ?? 0)) (\(size)) \(perfLog)"
+                latestCell.bindImageWith(data: latestCell.model)
+            }
+        }
+
+        // 使用过一次就清除
+        self.outputImageView.image = nil
     }
     
     /// 更新多图模型加载状态

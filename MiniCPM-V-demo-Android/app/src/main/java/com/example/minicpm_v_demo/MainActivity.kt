@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.textfield.TextInputEditText
+import io.noties.markwon.Markwon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.onCompletion
@@ -40,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnImage: ImageButton
     private lateinit var btnClearChat: ImageButton
     private lateinit var btnModelManager: ImageButton
+    private lateinit var btnImageSlice: ImageButton
     private lateinit var cardInputBar: View
     private lateinit var appBarLayout: AppBarLayout
 
@@ -88,12 +90,13 @@ class MainActivity : AppCompatActivity() {
         btnImage = findViewById(R.id.btn_image)
         btnClearChat = findViewById(R.id.btn_clear_chat)
         btnModelManager = findViewById(R.id.btn_model_manager)
+        btnImageSlice = findViewById(R.id.btn_image_slice)
         cardInputBar = findViewById(R.id.card_input_bar)
         appBarLayout = findViewById(R.id.appBarLayout)
     }
 
     private fun setupRecyclerView() {
-        chatAdapter = ChatAdapter()
+        chatAdapter = ChatAdapter(Markwon.create(this))
         chatAdapter.setOnStopClick {
             engine.cancelGeneration()
         }
@@ -129,6 +132,7 @@ class MainActivity : AppCompatActivity() {
         btnModelManager.setOnClickListener {
             startActivity(Intent(this, ModelManagerActivity::class.java))
         }
+        btnImageSlice.setOnClickListener { showImageSliceDialog() }
 
         etInput.setOnFocusChangeListener { _, hasFocus ->
             if (hasFocus) {
@@ -164,6 +168,44 @@ class MainActivity : AppCompatActivity() {
                 clearChat()
             }
             .setNegativeButton("取消", null)
+            .show()
+    }
+
+    /**
+     * Pops up the slice-cap picker.  The slider drives a live preview of
+     * the selected value; only on dialog "confirm" do we persist + push
+     * the value to native.  Cancel = no-op.
+     *
+     * Live update path is cheap (no mmproj reload), but we still gate it
+     * behind a confirm step so users don't accidentally regenerate cached
+     * embeddings while dragging the knob.
+     */
+    private fun showImageSliceDialog() {
+        val view = layoutInflater.inflate(R.layout.dialog_image_slice, null, false)
+        val slider = view.findViewById<com.google.android.material.slider.Slider>(R.id.slider_image_slice)
+        val tvValue = view.findViewById<android.widget.TextView>(R.id.tv_image_slice_value)
+
+        val initial = LlamaEngine.getImageMaxSliceNums(this)
+        slider.value = initial.toFloat()
+        tvValue.text = initial.toString()
+        slider.addOnChangeListener { _, value, _ -> tvValue.text = value.toInt().toString() }
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.image_slice_dialog_title)
+            .setView(view)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val chosen = slider.value.toInt()
+                lifecycleScope.launch {
+                    engine.setImageMaxSliceNums(chosen)
+                    val msgRes = if (engine.isVisionSupported) {
+                        R.string.image_slice_apply_toast
+                    } else {
+                        R.string.image_slice_pending_toast
+                    }
+                    Toast.makeText(this@MainActivity, getString(msgRes, chosen), Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 

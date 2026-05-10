@@ -64,6 +64,19 @@ class LlamaEngine private constructor(
 
         private const val PREFS_NAME = "model_prefs"
         private const val KEY_SELECTED_MODEL = "selected_model_id"
+        private const val KEY_IMAGE_MAX_SLICE = "image_max_slice_nums"
+
+        // MiniCPM-V's hard upper bound on slice count.  Values higher than 9
+        // get clamped by clip.cpp::get_best_grid anyway; we cap on the UI
+        // side to keep the slider semantics honest.
+        const val MIN_IMAGE_SLICE = 1
+        const val MAX_IMAGE_SLICE = 9
+        // Out-of-the-box we run with MiniCPM-V's full slice budget (9 =
+        // the model's built-in default) so first-launch image quality
+        // matches what the model card promises.  Users who care about
+        // prefill latency drop the chat-page slider down to 1 (no
+        // slicing, ~9x fewer image tokens).
+        const val DEFAULT_IMAGE_SLICE = MAX_IMAGE_SLICE
 
         fun getInstance(context: Context): LlamaEngine =
             instance ?: synchronized(this) {
@@ -82,6 +95,18 @@ class LlamaEngine private constructor(
 
         fun setSelectedModel(context: Context, modelId: String) {
             prefs(context).edit().putString(KEY_SELECTED_MODEL, modelId).apply()
+        }
+
+        // Slice cap is persisted globally (not per-model) - users keep
+        // their preferred speed / quality trade-off across model swaps,
+        // and v4 / v4.6 / 2.6 all use the same slicing semantics.
+        fun getImageMaxSliceNums(context: Context): Int =
+            prefs(context).getInt(KEY_IMAGE_MAX_SLICE, DEFAULT_IMAGE_SLICE)
+                .coerceIn(MIN_IMAGE_SLICE, MAX_IMAGE_SLICE)
+
+        fun setImageMaxSliceNumsPref(context: Context, n: Int) {
+            val clamped = n.coerceIn(MIN_IMAGE_SLICE, MAX_IMAGE_SLICE)
+            prefs(context).edit().putInt(KEY_IMAGE_MAX_SLICE, clamped).apply()
         }
 
         fun modelDir(context: Context): String =
@@ -506,7 +531,13 @@ class LlamaEngine private constructor(
 
     private external fun init(nativeLibDir: String)
     private external fun load(modelPath: String): Int
-    private external fun loadMmproj(mmprojPath: String): Int
+    // image_max_slice_nums: 1..9 (or -1 for model default).  See JNI for
+    // the semantics; the upper layer should pass MIN_IMAGE_SLICE..MAX_IMAGE_SLICE.
+    private external fun loadMmproj(mmprojPath: String, imageMaxSliceNums: Int): Int
+    // Native counterpart of [setImageMaxSliceNums].  Renamed in JNI as
+    // setImageMaxSliceNumsNative to avoid the name collision with the
+    // public suspend wrapper above.
+    private external fun setImageMaxSliceNumsNative(n: Int)
     private external fun prepare(): Int
     private external fun systemInfo(): String
     private external fun processSystemPrompt(systemPrompt: String): Int
@@ -566,8 +597,9 @@ class LlamaEngine private constructor(
                         require(it.canRead()) { "Cannot read mmproj file: $pathToMmproj" }
                     }
 
-                    Log.i(TAG, "Loading mmproj... \n$pathToMmproj")
-                    loadMmproj(pathToMmproj).let {
+                    val sliceCap = getImageMaxSliceNums(context)
+                    Log.i(TAG, "Loading mmproj (image_max_slice_nums=$sliceCap)... \n$pathToMmproj")
+                    loadMmproj(pathToMmproj, sliceCap).let {
                         if (it != 0) {
                             Log.w(TAG, "Failed to load mmproj (code: $it), continuing without vision support")
                         } else {
@@ -592,6 +624,23 @@ class LlamaEngine private constructor(
         }
 
     val isVisionSupported: Boolean get() = _mmprojLoaded
+
+    // Live update of the per-image slice cap.  Persists the new value to
+    // SharedPreferences so the next mmproj reload picks it up too, and
+    // (if mmproj is currently loaded) immediately patches the in-memory
+    // clip context so the *next* image picked uses the new cap without
+    // needing a model reload.  Cheap (no allocation, no warmup) - safe to
+    // wire to a continuous slider.
+    suspend fun setImageMaxSliceNums(n: Int) = withContext(llamaDispatcher) {
+        val clamped = n.coerceIn(MIN_IMAGE_SLICE, MAX_IMAGE_SLICE)
+        setImageMaxSliceNumsPref(context, clamped)
+        if (_mmprojLoaded) {
+            Log.i(TAG, "Live-updating image_max_slice_nums = $clamped")
+            setImageMaxSliceNumsNative(clamped)
+        } else {
+            Log.i(TAG, "image_max_slice_nums = $clamped persisted; will apply on next mmproj load")
+        }
+    }
 
     suspend fun setSystemPrompt(prompt: String) =
         withContext(llamaDispatcher) {

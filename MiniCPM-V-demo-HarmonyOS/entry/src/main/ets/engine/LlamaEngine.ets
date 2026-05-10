@@ -39,6 +39,16 @@ const DOMAIN = 0xC0DE;
 
 const PREFS_NAME = 'model_prefs';
 const KEY_SELECTED_MODEL = 'selected_model_id';
+const KEY_IMAGE_MAX_SLICE = 'image_max_slice_nums';
+
+// Slice cap bounds.  9 = MiniCPM-V upper bound (clip.cpp::get_best_grid).
+// Out-of-the-box we default to the upper bound so first-launch image
+// quality matches what the model card promises; users opt into faster
+// prefill by dragging the chat-page slider down (1 = no slicing,
+// ~9x fewer image tokens).  Mirrors LlamaEngine.kt.
+export const MIN_IMAGE_SLICE = 1;
+export const MAX_IMAGE_SLICE = 9;
+export const DEFAULT_IMAGE_SLICE = MAX_IMAGE_SLICE;
 
 export const MODEL_SUBDIR = 'models';
 // Per-turn token budget. iOS demo (MTMDParams.swift) uses 100 because ANE
@@ -211,7 +221,9 @@ export class LlamaEngine {
       if (mmprojPath != null) {
         hilog.info(DOMAIN, TAG, 'Checking access to mmproj... \n%{public}s', mmprojPath);
         LlamaEngine.requireRegularFile(mmprojPath, 'mmproj');
-        const mrc = nativeEngine.loadMmproj(mmprojPath);
+        const sliceCap = await LlamaEngine.getImageMaxSliceNums(this.context);
+        hilog.info(DOMAIN, TAG, 'Loading mmproj (image_max_slice_nums=%{public}d)...', sliceCap);
+        const mrc = nativeEngine.loadMmproj(mmprojPath, sliceCap);
         if (mrc !== 0) {
           hilog.warn(DOMAIN, TAG,
                      'Failed to load mmproj (code: %{public}d), continuing without vision', mrc);
@@ -457,6 +469,60 @@ export class LlamaEngine {
     const p = await LlamaEngine.prefs(context);
     await p.put(KEY_SELECTED_MODEL, modelId);
     await p.flush();
+  }
+
+  // Slice cap (1..9) is persisted globally (not per-model) - users keep
+  // their preferred speed / quality trade-off across model swaps and all
+  // MiniCPM-V variants share the slicing semantics.  Mirrors LlamaEngine.kt.
+  private static cachedImageMaxSlice: number | null = null;
+
+  static async getImageMaxSliceNums(context: common.Context): Promise<number> {
+    if (LlamaEngine.cachedImageMaxSlice != null) {
+      return LlamaEngine.cachedImageMaxSlice;
+    }
+    try {
+      const p = await LlamaEngine.prefs(context);
+      const v = await p.get(KEY_IMAGE_MAX_SLICE, DEFAULT_IMAGE_SLICE) as number;
+      const clamped = Math.max(MIN_IMAGE_SLICE, Math.min(MAX_IMAGE_SLICE, v));
+      LlamaEngine.cachedImageMaxSlice = clamped;
+      return clamped;
+    } catch (e) {
+      hilog.warn(DOMAIN, TAG, 'getImageMaxSliceNums failed: %{public}s', `${e}`);
+      LlamaEngine.cachedImageMaxSlice = DEFAULT_IMAGE_SLICE;
+      return DEFAULT_IMAGE_SLICE;
+    }
+  }
+
+  // Best-effort sync getter (returns last cached value, or default if the
+  // cache hasn't been warmed yet).  Useful for initial UI rendering before
+  // the async preferences read finishes.
+  static getImageMaxSliceNumsCached(): number {
+    return LlamaEngine.cachedImageMaxSlice ?? DEFAULT_IMAGE_SLICE;
+  }
+
+  static async setImageMaxSliceNumsPref(context: common.Context, n: number): Promise<void> {
+    const clamped = Math.max(MIN_IMAGE_SLICE, Math.min(MAX_IMAGE_SLICE, n));
+    LlamaEngine.cachedImageMaxSlice = clamped;
+    const p = await LlamaEngine.prefs(context);
+    await p.put(KEY_IMAGE_MAX_SLICE, clamped);
+    await p.flush();
+  }
+
+  // Live update of the slice cap.  Persists the new value AND patches the
+  // in-memory clip context so the next image picked uses the new cap
+  // immediately - no mmproj reload required.  Cheap (no allocation, no
+  // warmup): safe to wire to a continuous slider.
+  async updateImageMaxSliceNums(n: number): Promise<void> {
+    const clamped = Math.max(MIN_IMAGE_SLICE, Math.min(MAX_IMAGE_SLICE, n));
+    await LlamaEngine.setImageMaxSliceNumsPref(this.context, clamped);
+    if (this.mmprojLoaded) {
+      hilog.info(DOMAIN, TAG, 'Live-updating image_max_slice_nums = %{public}d', clamped);
+      nativeEngine.setImageMaxSliceNums(clamped);
+    } else {
+      hilog.info(DOMAIN, TAG,
+                 'image_max_slice_nums = %{public}d persisted; will apply on next mmproj load',
+                 clamped);
+    }
   }
 
   // ------------------------------------------------------------------

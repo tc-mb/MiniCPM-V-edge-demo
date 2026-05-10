@@ -21,6 +21,7 @@ import { ChatMessageList } from '../components/ChatMessageList';
 import { WelcomeCard } from '../components/WelcomeCard';
 import { UserMessageItem } from '../components/UserMessageItem';
 import { AiMessageItem } from '../components/AiMessageItem';
+import { ImageSliceDialog } from '../components/ImageSliceDialog';
 import { pickAndDecodeImage, imageInfoString, PickedImage } from '../utils/ImageCodec';
 
 const DOMAIN = 0xC0DE;
@@ -63,10 +64,23 @@ struct Index {
   private isImagePrefilled: boolean = false;
   private listScroller: Scroller = new Scroller();
 
+  // Slice cap currently shown by the dialog.  We pre-warm it from prefs
+  // in aboutToAppear so the dialog opens to the right starting position
+  // even if the user hasn't loaded a model yet.
+  @State imageMaxSlice: number = 1;
+  // Lazy: rebuilt each time the user taps the slider button so that
+  // `initialValue` reflects the latest persisted choice.
+  private imageSliceDialogController: CustomDialogController | null = null;
+
   aboutToAppear(): void {
     this.engine = LlamaEngine.getInstance(getContext(this));
     this.messageList.push(ChatMessage.welcome());
     this.engine.addListener(this.engineListener);
+    // Warm the slice-cap cache so the dialog shows the persisted value
+    // on first open without flickering through the default.
+    LlamaEngine.getImageMaxSliceNums(getContext(this)).then((v: number) => {
+      this.imageMaxSlice = v;
+    });
   }
 
   aboutToDisappear(): void {
@@ -292,6 +306,24 @@ struct Index {
     });
   }
 
+  // Open the slice-cap picker. Re-create the dialog controller every
+  // time so `initialValue` reflects whatever the user picked last (or
+  // the persisted-prefs value on a cold open).
+  private async onClickImageSlice(): Promise<void> {
+    const initial = await LlamaEngine.getImageMaxSliceNums(getContext(this));
+    this.imageMaxSlice = initial;
+    this.imageSliceDialogController = new CustomDialogController({
+      builder: ImageSliceDialog({
+        engine: this.engine,
+        initialValue: initial,
+      }),
+      autoCancel: true,
+      customStyle: true,
+      alignment: DialogAlignment.Center,
+    });
+    this.imageSliceDialogController.open();
+  }
+
   private async onClickSend(): Promise<void> {
     if (!this.engine) return;
     const text = this.inputText.trim();
@@ -390,6 +422,15 @@ struct Index {
       // The image picker icon used to live here too, but it has been moved
       // next to the input field at the bottom of the screen, matching the
       // Android/iOS layout (gallery button sits inside the input bar).
+      Button({ type: ButtonType.Circle, stateEffect: true }) {
+        Image($r('app.media.ic_image_slice'))
+          .width(22).height(22)
+          .fillColor($r('app.color.on_surface_variant'));
+      }
+      .width(40).height(40).margin({ right: 4 })
+      .backgroundColor(Color.Transparent)
+      .onClick(() => { this.onClickImageSlice(); });
+
       Button({ type: ButtonType.Circle, stateEffect: true }) {
         Image($r('app.media.ic_delete'))
           .width(22).height(22)

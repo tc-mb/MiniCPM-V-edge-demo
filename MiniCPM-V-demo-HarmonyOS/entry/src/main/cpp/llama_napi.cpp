@@ -66,6 +66,16 @@ static mtmd_context                     * g_ctx_vision;
 // 5  = V-4.0 / 6  = o-4.0 / 100045 = o-4.5 / 46/460/461 = V-4.6 (instruct / thinking)
 static int                                g_minicpmv_version = 0;
 
+// Most recent slice cap requested by the upper layer.  Persists between
+// loadMmproj calls so a user-chosen value survives a model unload/reload.
+// Initial fallback = 9 (MiniCPM-V's built-in upper bound) so anything
+// that calls into native before ArkTS has had a chance to thread the
+// user-preference value through gets the "high quality" default rather
+// than the legacy "no slicing" one.  In practice every real call site
+// uses LlamaEngine.loadModel(...) which calls loadMmproj(path, n) with
+// the persisted value.  Mirrors llama_jni.cpp on Android.
+static int                                g_image_max_slice_nums = 9;
+
 // =============================================================================
 // Generic NAPI helpers
 // =============================================================================
@@ -161,8 +171,8 @@ napi_value Load(napi_env env, napi_callback_info info) {
 }
 
 napi_value LoadMmproj(napi_env env, napi_callback_info info) {
-    size_t argc = 1;
-    napi_value argv[1];
+    size_t argc = 2;
+    napi_value argv[2];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
 
     if (!g_model) {
@@ -171,14 +181,24 @@ napi_value LoadMmproj(napi_env env, napi_callback_info info) {
     }
 
     std::string mmproj_path = napi_get_string(env, argv[0]);
+    // Fallback only used if ArkTS forgot to pass the slider value (it
+    // shouldn't, but we want a safe default that matches the rest of the
+    // demo).  9 = MiniCPM-V upper bound, see LlamaEngine.ets::DEFAULT_IMAGE_SLICE.
+    int image_max_slice_nums = 9;
+    if (argc >= 2) {
+        napi_get_value_int32(env, argv[1], &image_max_slice_nums);
+    }
     LOGd("LoadMmproj: Loading mmproj from: \n%{public}s\n", mmproj_path.c_str());
 
     mtmd_context_params mparams = mtmd_context_params_default();
     mparams.use_gpu             = false;
     mparams.print_timings       = false;
-    // On mobile we skip MiniCPM-V's high-resolution slicing (1 overview only,
-    // ~9x fewer image tokens, much faster prefill). Mirrors Android demo.
-    mparams.image_max_slice_nums = 1;
+    // Slice cap is now driven by the chat page's slider and persisted in
+    // app preferences (see LlamaEngine.ets).  1 = no slicing, 9 =
+    // MiniCPM-V upper bound (most detail, slowest).  -1 reverts to the
+    // model default.
+    g_image_max_slice_nums       = image_max_slice_nums;
+    mparams.image_max_slice_nums = image_max_slice_nums;
     mparams.n_threads           = N_THREADS;
 
     g_ctx_vision = mtmd_init_from_file(mmproj_path.c_str(), g_model, mparams);
@@ -188,10 +208,35 @@ napi_value LoadMmproj(napi_env env, napi_callback_info info) {
     }
 
     g_minicpmv_version = mtmd_get_minicpmv_version(g_ctx_vision);
-    LOGi("LoadMmproj: mmproj loaded! Vision: %{public}s, minicpmv_version: %{public}d",
+    LOGi("LoadMmproj: mmproj loaded! Vision: %{public}s, minicpmv_version: %{public}d, "
+         "image_max_slice_nums: %{public}d",
          mtmd_support_vision(g_ctx_vision) ? "yes" : "no",
-         g_minicpmv_version);
+         g_minicpmv_version,
+         g_image_max_slice_nums);
     return napi_make_int(env, 0);
+}
+
+// Live update of the per-image slice cap (no mmproj reload).  Slicing
+// decision happens at encode time so the next image picks up the new
+// value automatically.  Mirrors Java_..._setImageMaxSliceNumsNative on
+// Android.
+napi_value SetImageMaxSliceNums(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    int n = 1;
+    if (argc >= 1) {
+        napi_get_value_int32(env, argv[0], &n);
+    }
+    g_image_max_slice_nums = n;
+    if (g_ctx_vision) {
+        mtmd_set_image_max_slice_nums(g_ctx_vision, n);
+        LOGi("SetImageMaxSliceNums: image_max_slice_nums set to %{public}d", n);
+    } else {
+        LOGi("SetImageMaxSliceNums: mmproj not loaded; deferred slice cap = %{public}d", n);
+    }
+    return make_undefined(env);
 }
 
 static llama_context *init_context(llama_model *model, const int n_ctx = DEFAULT_CONTEXT_SIZE) {

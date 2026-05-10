@@ -45,7 +45,10 @@ import Foundation
     
     /// 内存不足
     case outOfMemory
-    
+
+    /// 调用超时（典型场景：mtmd_ios_prefill_image 内部 ANE/CoreML 阻塞过久）
+    case timeout(String)
+
     /// 未知错误
     case unknown(String)
     
@@ -76,6 +79,8 @@ import Foundation
             return "正在初始化中，请等待完成"
         case .outOfMemory:
             return "内存不足"
+        case .timeout(let message):
+            return "调用超时: \(message)"
         case .unknown(let message):
             return "未知错误: \(message)"
         }

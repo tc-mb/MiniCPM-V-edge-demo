@@ -9,15 +9,38 @@ import Foundation
 
 /// 性能日志 timer
 extension MBHomeViewController {
-    
+
     /// 开启：性能日志 Timer
+    ///
+    /// 必须在 main RunLoop 上 schedule，否则 background thread 上 attach 的 Timer
+    /// 永远不会 fire，logTimeSecond 不增长，UI 上"预处理耗时"会显示成 0.0s。
+    /// 内部统一 dispatch 到 main，使得调用方可以从任何线程（包括 Task.detached）
+    /// 安全调用，不需要外面再包一层。
     func startLogTimer() {
-        self.logTimeSecond = 0
-        logTimer = Timer.scheduledTimer(timeInterval: 0.1,
-                                        target: self,
-                                        selector: #selector(logTimerFire),
-                                        userInfo: nil,
-                                        repeats: true)
+        let work: () -> Void = { [weak self] in
+            guard let self = self else { return }
+
+            // 先把上一轮残留 timer 干掉，避免连续选图时多份 timer 并存
+            self.logTimer?.invalidate()
+            self.logTimer = nil
+            self.logTimeSecond = 0
+
+            // 用 RunLoop.main.add(_:forMode:.common) 而不是 scheduledTimer，
+            // 既显式声明 RunLoop，也保证滚动 UITableView 时（tracking mode）
+            // timer 仍然 fire。
+            let t = Timer(timeInterval: 0.1,
+                          target: self,
+                          selector: #selector(self.logTimerFire),
+                          userInfo: nil,
+                          repeats: true)
+            RunLoop.main.add(t, forMode: .common)
+            self.logTimer = t
+        }
+        if Thread.isMainThread {
+            work()
+        } else {
+            DispatchQueue.main.async(execute: work)
+        }
     }
     
     /// Timer 更新
@@ -97,9 +120,20 @@ extension MBHomeViewController {
     }
     
     /// 停止 Timer
+    ///
+    /// 与 startLogTimer 对称：内部统一在 main 上 invalidate。
+    /// 注意不要在这里清掉 logTimeSecond，调用方往往需要先读它再 stop
+    /// （见 prepareLoadModelAddImageToCell 的兜底分支）。
     func stopLogTimer() {
-        logTimer?.invalidate()
-        logTimer = nil
-        logTimeSecond = 0
+        let work: () -> Void = { [weak self] in
+            guard let self = self else { return }
+            self.logTimer?.invalidate()
+            self.logTimer = nil
+        }
+        if Thread.isMainThread {
+            work()
+        } else {
+            DispatchQueue.main.async(execute: work)
+        }
     }
 }

@@ -32,6 +32,9 @@
 		FA47CD712C23F9F800A7D563 /* MBHomeViewController+LogTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA47CD702C23F9F800A7D563 /* MBHomeViewController+LogTimer.swift */; };
 		FA49BA0F2C32A18C005660C4 /* NSData+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA49BA0E2C32A18C005660C4 /* NSData+Extensions.swift */; };
 		FA49BA112C32A1DD005660C4 /* MBUtils+checkMD5.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA49BA102C32A1DD005660C4 /* MBUtils+checkMD5.swift */; };
+		FA9AB0112F03000200E00011 /* MarkdownEscape.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9AB0102F03000200E00010 /* MarkdownEscape.swift */; };
+		FA9AB0212F03000200E00021 /* ImageSliceSetting.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9AB0202F03000200E00020 /* ImageSliceSetting.swift */; };
+		FA9AB0312F03000200E00031 /* MBImageSliceSettingAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9AB0302F03000200E00030 /* MBImageSliceSettingAlert.swift */; };
 		FA4B77EB2C4A0C3800F31ED2 /* MBVideoSerialProcessQueueManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4B77EA2C4A0C3800F31ED2 /* MBVideoSerialProcessQueueManager.swift */; };
 		FA7517002C452A0500CFB066 /* MBVideoFrameExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA7516FF2C452A0500CFB066 /* MBVideoFrameExtractor.swift */; };
 		FA7CC0332E26368600A480AD /* MBHUD.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA7CC0322E26368600A480AD /* MBHUD.swift */; };
@@ -133,6 +136,9 @@
 		FA47CD702C23F9F800A7D563 /* MBHomeViewController+LogTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MBHomeViewController+LogTimer.swift"; sourceTree = "<group>"; };
 		FA49BA0E2C32A18C005660C4 /* NSData+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSData+Extensions.swift"; sourceTree = "<group>"; };
 		FA49BA102C32A1DD005660C4 /* MBUtils+checkMD5.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MBUtils+checkMD5.swift"; sourceTree = "<group>"; };
+		FA9AB0102F03000200E00010 /* MarkdownEscape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownEscape.swift; sourceTree = "<group>"; };
+		FA9AB0202F03000200E00020 /* ImageSliceSetting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSliceSetting.swift; sourceTree = "<group>"; };
+		FA9AB0302F03000200E00030 /* MBImageSliceSettingAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBImageSliceSettingAlert.swift; sourceTree = "<group>"; };
 		FA4B77EA2C4A0C3800F31ED2 /* MBVideoSerialProcessQueueManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBVideoSerialProcessQueueManager.swift; sourceTree = "<group>"; };
 		FA7516FF2C452A0500CFB066 /* MBVideoFrameExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBVideoFrameExtractor.swift; sourceTree = "<group>"; };
 		FA7CC0322E26368600A480AD /* MBHUD.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBHUD.swift; sourceTree = "<group>"; };
@@ -364,6 +370,7 @@
 				FACAE9792C40D37900C557D6 /* MBHomeViewController+SendAction.swift */,
 				FACAE97B2C410C6100C557D6 /* MBHomeViewController+LoadModel.swift */,
 				FA35EE742C4901D30099EDC0 /* MBHomeViewController+CaptureVideo.swift */,
+				FA9AB0302F03000200E00030 /* MBImageSliceSettingAlert.swift */,
 			);
 			path = ViewController;
 			sourceTree = "<group>";
@@ -554,6 +561,8 @@
 				FA49BA102C32A1DD005660C4 /* MBUtils+checkMD5.swift */,
 				FA7D16B72C45FE6300442536 /* MBConstants.swift */,
 				FA9AB0012F03000100E00001 /* MiniCPMV46CoreMLBootstrap.swift */,
+				FA9AB0102F03000200E00010 /* MarkdownEscape.swift */,
+				FA9AB0202F03000200E00020 /* ImageSliceSetting.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -756,6 +765,9 @@
 				FAE7CE492C25531F0080570C /* MBHomeViewController+UITextView.swift in Sources */,
 				FA2BA6A92C2D5AD8006C8193 /* MBHomeViewController+ImageProcess.swift in Sources */,
 				FA49BA112C32A1DD005660C4 /* MBUtils+checkMD5.swift in Sources */,
+				FA9AB0112F03000200E00011 /* MarkdownEscape.swift in Sources */,
+				FA9AB0212F03000200E00021 /* ImageSliceSetting.swift in Sources */,
+				FA9AB0312F03000200E00031 /* MBImageSliceSettingAlert.swift in Sources */,
 				FAC2A1DB2C11B3DD00499465 /* MBImageTableViewCell.swift in Sources */,
 				FAEFA8142C48BAD3009C2AEF /* SwiftyCameraRecordButton.swift in Sources */,
 				FAEFA8132C48BAD3009C2AEF /* SwiftyCameraPreviewPhotoViewController.swift in Sources */,
@@ -905,7 +917,7 @@
 				CODE_SIGN_ENTITLEMENTS = "MiniCPM-V-demo/MiniCPM-V-demo.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.12;
+				CURRENT_PROJECT_VERSION = 1.13;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = VGXUYC2C5K;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -938,7 +950,7 @@
 					"$(inherited)",
 					"$(SDKROOT)/usr/lib/swift",
 				);
-				MARKETING_VERSION = 1.12;
+				MARKETING_VERSION = 1.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tianchi.minicpmvdemo";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -960,7 +972,7 @@
 				CODE_SIGN_ENTITLEMENTS = "MiniCPM-V-demo/MiniCPM-V-demo.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.12;
+				CURRENT_PROJECT_VERSION = 1.13;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = VGXUYC2C5K;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -993,7 +1005,7 @@
 					"$(inherited)",
 					"$(SDKROOT)/usr/lib/swift",
 				);
-				MARKETING_VERSION = 1.12;
+				MARKETING_VERSION = 1.13;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.tianchi.minicpmvdemo";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";

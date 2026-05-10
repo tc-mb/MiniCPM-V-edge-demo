@@ -37,6 +37,25 @@ extension MBHomeViewController {
         self.navigationController?.pushViewController(vc, animated: true)
     }
 
+    /// 顶导切图设置按钮 → 弹出滑条选择切图档位 (1..9)
+    @objc func imageSliceButtonTapped() {
+        let initial = ImageSliceSetting.current
+        MBImageSliceSettingAlert.present(from: self, initialValue: initial) { [weak self] chosen in
+            guard let self = self else { return }
+            // mtmdWrapperExample 持久化新值并 live 推到 mtmd_context（如果已 init）
+            self.mtmdWrapperExample?.updateImageMaxSliceNums(chosen)
+
+            let loaded = self.mtmdWrapperExample?.multiModelLoadingSuccess ?? false
+            let message = loaded
+                ? "图片切片数已切换为 \(chosen)"
+                : "已保存切片数 \(chosen)，下次加载模型时生效"
+            let hud = MBHUD.showAdded(to: self.view, animated: true)
+            hud.mode = .text
+            hud.label.text = message
+            hud.hide(animated: true, afterDelay: 2)
+        }
+    }
+
     /// delete nav item clicked
     @objc func deleteButtonTapped() {
 

@@ -40,6 +40,12 @@ import llama
     
     /// 是否预热
     public let warmup: Bool
+
+    /// 单张图最大切片数（仅对 llava-uhd 风格模型生效，例如 MiniCPM-V）。
+    /// - `-1`：按模型默认（MiniCPM-V 当前 9 片）
+    /// - `1`：不切图（仅 overview，~9× 更少图像 token，速度最快但丢细节）
+    /// - `2..9`：用户在对话页用滑条选的档位
+    public let imageMaxSliceNums: Int
     
     /// 初始化方法
     /// - Parameters:
@@ -55,6 +61,7 @@ import llama
     ///   - useGPU: 是否使用 GPU，默认 false
     ///   - mmprojUseGPU: 多模态投影是否使用 GPU，默认 false
     ///   - warmup: 是否预热，默认 true
+    ///   - imageMaxSliceNums: 单张图最大切片数，默认 9（MiniCPM-V 自身上限，"开启大图"模式）。用户可在对话页用滑条往下调到 1（不切图，最快）。
     public init(
         modelPath: String,
         mmprojPath: String,
@@ -65,7 +72,8 @@ import llama
         temperature: Float = 0.7,
         useGPU: Bool = true,
         mmprojUseGPU: Bool = true,
-        warmup: Bool = true
+        warmup: Bool = true,
+        imageMaxSliceNums: Int = 9
     ) {
         self.modelPath = modelPath
         self.mmprojPath = mmprojPath
@@ -77,6 +85,7 @@ import llama
         self.useGPU = useGPU
         self.mmprojUseGPU = mmprojUseGPU
         self.warmup = warmup
+        self.imageMaxSliceNums = imageMaxSliceNums
     }
     
     /// 创建默认参数
@@ -105,6 +114,7 @@ import llama
         params.use_gpu = useGPU
         params.mmproj_use_gpu = mmprojUseGPU
         params.warmup = warmup
+        params.image_max_slice_nums = Int32(imageMaxSliceNums)
         return params
     }
 } 

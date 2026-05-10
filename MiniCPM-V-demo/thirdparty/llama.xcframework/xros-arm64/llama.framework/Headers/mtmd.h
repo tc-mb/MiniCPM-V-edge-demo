@@ -122,6 +122,14 @@ MTMD_API mtmd_context * mtmd_init_from_file(const char * mmproj_fname,
 
 MTMD_API void mtmd_free(mtmd_context * ctx);
 
+// Runtime override of the maximum number of image slices/tiles used by
+// llava-uhd style pre-processing (e.g. MiniCPM-V).  Pass `-1` to revert to
+// the model default (currently 9 for MiniCPM-V), or `1` to disable slicing
+// entirely (single overview image, much faster on mobile but loses
+// high-resolution detail).  Safe to call between images; only takes
+// effect on the next encode.  No-op for models that don't use slicing.
+MTMD_API void mtmd_set_image_max_slice_nums(mtmd_context * ctx, int n);
+
 // whether we need to set non-causal mask before llama_decode
 MTMD_API bool mtmd_decode_use_non_causal(mtmd_context * ctx);
 

@@ -58,6 +58,16 @@
                             app:tint="?attr/colorOnSurfaceVariant" />
 
                         <ImageButton
+                            android:id="@+id/btn_image_slice"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="4dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:src="@drawable/ic_image_slice"
+                            android:contentDescription="@string/image_slice_settings"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+
+                        <ImageButton
                             android:id="@+id/btn_clear_chat"
                             android:layout_width="40dp"
                             android:layout_height="40dp"

@@ -52,6 +52,17 @@ static mtmd_context                     * g_ctx_vision;
 // 46/460/461 = V-4.6 (instruct/thinking)
 static int                                g_minicpmv_version = 0;
 
+// Most recent slice cap requested by the upper layer.  Persists across
+// loadMmproj calls so a user-chosen value survives e.g. an unload/reload
+// of the model.  Initial fallback = 9 (MiniCPM-V's built-in upper bound)
+// so anything that calls into native before Kotlin has had a chance to
+// thread the user-preference value through gets the "high quality"
+// default rather than the legacy "no slicing" one.  In practice every
+// real call site uses LlamaEngine.loadMmproj(path, n) which passes the
+// persisted preference, so this only matters for the very first
+// setImageMaxSliceNumsNative call before mmproj is loaded.
+static int                                g_image_max_slice_nums = 9;
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_example_minicpm_1v_1demo_LlamaEngine_init(JNIEnv *env, jobject /*unused*/, jstring nativeLibDir) {
@@ -106,7 +117,9 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_load(JNIEnv *env, jobject, jstring
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_example_minicpm_1v_1demo_LlamaEngine_loadMmproj(JNIEnv *env, jobject, jstring jmmproj_path) {
+Java_com_example_minicpm_1v_1demo_LlamaEngine_loadMmproj(JNIEnv *env, jobject,
+                                                        jstring jmmproj_path,
+                                                        jint jimage_max_slice_nums) {
     if (!g_model) {
         LOGe("%s: Base model must be loaded first!", __func__);
         return 1;
@@ -119,10 +132,13 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_loadMmproj(JNIEnv *env, jobject, j
     mparams.use_gpu   = false;
     mparams.print_timings = false;
 
-    // On mobile we skip MiniCPM-V's high-resolution slicing (1 overview only,
-    // ~9x fewer image tokens, much faster prefill at the cost of small-detail
-    // recognition). Set to -1 (or remove) to use the model default of 9 slices.
-    mparams.image_max_slice_nums = 1;
+    // Slice cap is driven by the chat-page slider and persisted in
+    // shared prefs.  9 = MiniCPM-V upper bound (best detail, slowest;
+    // out-of-the-box default, matches the model card).  1 = no slicing
+    // (single overview, ~9x fewer image tokens, much faster prefill).
+    // -1 also accepted -> reverts to the model default.
+    g_image_max_slice_nums = (jint) jimage_max_slice_nums;
+    mparams.image_max_slice_nums = (int) g_image_max_slice_nums;
 
     mparams.n_threads = N_THREADS;
 
@@ -135,11 +151,33 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_loadMmproj(JNIEnv *env, jobject, j
     }
 
     g_minicpmv_version = mtmd_get_minicpmv_version(g_ctx_vision);
-    LOGi("%s: mmproj model loaded successfully! Vision: %s, minicpmv_version: %d",
+    LOGi("%s: mmproj model loaded successfully! Vision: %s, minicpmv_version: %d, "
+         "image_max_slice_nums: %d",
          __func__,
          mtmd_support_vision(g_ctx_vision) ? "yes" : "no",
-         g_minicpmv_version);
+         g_minicpmv_version,
+         g_image_max_slice_nums);
     return 0;
+}
+
+// Live update of the per-image slice cap.  Doesn't require a mmproj
+// reload because clip's slicing decision is made at encode time and reads
+// hparams.custom_image_max_slice_nums on each call.
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_example_minicpm_1v_1demo_LlamaEngine_setImageMaxSliceNumsNative(JNIEnv * /*env*/,
+                                                                        jobject,
+                                                                        jint jn) {
+    g_image_max_slice_nums = (int) jn;
+    if (g_ctx_vision) {
+        mtmd_set_image_max_slice_nums(g_ctx_vision, (int) jn);
+        LOGi("%s: image_max_slice_nums set to %d", __func__, g_image_max_slice_nums);
+    } else {
+        // mmproj not loaded yet - the value will be picked up by
+        // loadMmproj on its next call (it consults g_image_max_slice_nums
+        // through the new JNI signature; see Kotlin LlamaEngine).
+        LOGi("%s: mmproj not loaded; deferred slice cap = %d", __func__, g_image_max_slice_nums);
+    }
 }
 
 static llama_context *init_context(llama_model *model, const int n_ctx = DEFAULT_CONTEXT_SIZE) {

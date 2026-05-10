@@ -11,8 +11,11 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import io.noties.markwon.Markwon
 
-class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DiffCallback()) {
+class ChatAdapter(
+    private val markwon: Markwon
+) : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DiffCallback()) {
 
     companion object {
         private const val TYPE_WELCOME = 0
@@ -147,7 +150,7 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DiffCallba
         private val btnStop: MaterialButton = itemView.findViewById(R.id.btn_stop_generating)
 
         fun bind(item: ChatMessage.AiMessage) {
-            tvText.text = item.text
+            renderMarkdown(item.text)
             btnStop.visibility = if (item.isGenerating) View.VISIBLE else View.GONE
             btnStop.setOnClickListener {
                 onStopClick?.invoke()
@@ -155,11 +158,24 @@ class ChatAdapter : ListAdapter<ChatMessage, RecyclerView.ViewHolder>(DiffCallba
         }
 
         fun updateText(text: String) {
-            tvText.text = text
+            renderMarkdown(text)
         }
 
         fun setStopButtonVisible(visible: Boolean) {
             btnStop.visibility = if (visible) View.VISIBLE else View.GONE
+        }
+
+        // Re-rendering Markwon on every streaming token works fine in practice
+        // (parsing a few KB of partial markdown is sub-millisecond). If the
+        // generated text gets very long we can add a 100-150ms throttle here.
+        //
+        // [MarkdownEscape.normalizeResponseText] is the only place where
+        // assistant output is touched for v4.6's literal `\n` artefact.
+        // It runs at the rendering boundary so the canonical text stored in
+        // [ChatMessage.AiMessage.text] (and any future re-feed into the model)
+        // remains byte-identical to what native produced.
+        private fun renderMarkdown(text: String) {
+            markwon.setMarkdown(tvText, MarkdownEscape.normalizeResponseText(text))
         }
     }
 

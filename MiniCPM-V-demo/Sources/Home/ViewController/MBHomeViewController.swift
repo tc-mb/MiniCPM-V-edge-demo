@@ -423,11 +423,20 @@ import llama
                                              style: .plain,
                                              target: self,
                                              action: #selector(tutorialButtonTapped))
+
+        // 切图设置按钮（SF Symbol "slider.horizontal.3"，与齿轮区分）
+        let sliceImage = UIImage(systemName: "slider.horizontal.3")
+        let imageSliceButton = UIBarButtonItem(image: sliceImage,
+                                               style: .plain,
+                                               target: self,
+                                               action: #selector(imageSliceButtonTapped))
+        imageSliceButton.tintColor = .black
         tutorialButton.tintColor = .black
 
-        // rightBarButtonItems 从右到左排列：tutorial(最右) → setting → delete
-        // 把教程按钮放最右是为了让新用户一进入就能看到入口
-        self.navigationItem.rightBarButtonItems = [tutorialButton, settingButton, deleteButton]
+        // rightBarButtonItems 从右到左排列：
+        //   tutorial(最右) → setting(齿轮) → image-slice(滑条) → delete
+        // 把切图按钮放在齿轮和清空之间，对照 Android/HarmonyOS 三端布局保持一致。
+        self.navigationItem.rightBarButtonItems = [tutorialButton, settingButton, imageSliceButton, deleteButton]
 
         // 白色顶导
         self.navigationController?.setNavigationBackgroundColor(UIColor.mb_color(with: "#F9FAFC") ?? .white)
