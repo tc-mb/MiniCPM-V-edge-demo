@@ -33,10 +33,21 @@ extension MBHomeViewController {
     /// 使用 用户选择的模型 和 image 初始化模型
     public func prepareLoadModelAddImageToCell() {
         Task.detached(priority: .userInitiated) {
-            // 一次只加载一张图片并让模型 embedding 完成后，才能再加载另一张图片；
+            // 一次只加载一张图片并让模型 embedding 完成后，才能再加载另一张图片。
+            // uploadSingleImageToModel 在 prefill 期间被置为 true，把
+            // processImageAndTextMixModeSendLogic / 重复选图都阻断掉，防止两个
+            // mtmd 操作并发跑同一个 ctx（n_past 状态会乱、生成会"没回复"）。
             if await !self.uploadSingleImageToModel {
 
+                await self.updateSingleImageUploadAndProcessStatus(true)
+
                 await self.startLogTimer()
+
+                // 真实耗时用墙钟单独计量，比从 main RunLoop 上 logTimer
+                // 0.1s tick 累加更稳：prefill 期间 main runloop 上可能
+                // 跑了 cell.bindImageWith / 加载动画等，Timer fire 会少计 tick，
+                // 之前 cell 上显示"预处理耗时：0.0s"就是这个原因。
+                let processStart = Date()
 
                 // 用枚举把 prefill 的最终状态记下来，由 finalize 兜底统一刷 UI。
                 // 这样无论 await 抛错（ANE 加载失败）还是超时（CoreML hang），
@@ -61,7 +72,9 @@ extension MBHomeViewController {
                     }
                 }
 
-                await self.finalizeImagePrefillUI(status: status)
+                let elapsed = Date().timeIntervalSince(processStart)
+                await self.finalizeImagePrefillUI(status: status, elapsed: elapsed)
+                await self.updateSingleImageUploadAndProcessStatus(false)
             }
         }
     }
@@ -71,11 +84,14 @@ extension MBHomeViewController {
     /// - 写 cell 的 performLog（成功展示耗时；失败 / 超时显式提示用户）
     /// - 清掉 outputImageView 的预览图
     ///
+    /// `elapsed` 由调用方用墙钟（Date()）量出来传进来。早期版本是从
+    /// `logTimeSecond` 读，但那个值依赖 main RunLoop 上的 0.1s Timer fire，
+    /// 在 prefill 期间 main 被 cell 渲染挡住时会少 tick 甚至 0 tick，UI 上
+    /// 就显示成"预处理耗时：0.0s"。墙钟值永远正确。
+    ///
     /// 这是一个 @MainActor 函数，所有 UI 操作都在 main 上跑。
     @MainActor
-    func finalizeImagePrefillUI(status: ImagePrefillUIStatus) {
-        // 先把 timer 跑过的真实秒数读出来，stopLogTimer 不再清零这个值。
-        let lastLogTime = self.logTimeSecond
+    func finalizeImagePrefillUI(status: ImagePrefillUIStatus, elapsed: TimeInterval) {
         self.stopLogTimer()
 
         if self.dataArray.count > 0,
@@ -83,21 +99,14 @@ extension MBHomeViewController {
             if latestCell.model?.role == "user",
                latestCell.model?.contentImage != nil {
 
-                var size = "0 KB"
-                if self.outputImageFileSize > 0 {
-                    if self.outputImageFileSize / 1000 < 1000 {
-                        size = String(format: "%.0f KB", ceil(Double(self.outputImageFileSize) / 1000.0))
-                    } else {
-                        size = String(format: "%.0f MB", ceil(Double(self.outputImageFileSize) / 1000.0 / 1000.0))
-                    }
-                }
+                let size = MBHomeViewController.formatBytesAsKBMB(self.outputImageFileSize)
 
                 // 不同状态下渲染不同的 perfLog 文案。timeout / failed 用更显眼
                 // 的文案让用户直观感知到 ANE / CoreML 出问题了，而不是"卡住没反应"。
                 let perfLog: String
                 switch status {
                 case .succeeded:
-                    let timeInSeconds = String(format: "%.1f", lastLogTime)
+                    let timeInSeconds = String(format: "%.1f", elapsed)
                     perfLog = "\t\t预处理耗时：\(timeInSeconds)s"
                 case .timeout:
                     perfLog = "\t\t预处理超时（>\(Int(MTMDWrapper.defaultPrefillTimeoutSeconds))s）"
@@ -178,9 +187,17 @@ extension MBHomeViewController {
     
     /// 输入栏「选择图片」按钮点击事件
     @objc public func handleChooseImage(_ sender: UIButton) {
-        
+
         if thinking {
             self.showErrorTips("处理中，请稍等")
+            return
+        }
+
+        // 上一张图还在 mtmd_ios_prefill_image 中，禁止并发选第二张：
+        // 不然两次 prefill_image 在 DispatchQueue.global 上并发跑同一个
+        // mtmd_context，n_past 与图像 token KV 会全部错位。
+        if self.uploadSingleImageToModel {
+            self.showErrorTips("上一张图片预处理中，请稍等")
             return
         }
         

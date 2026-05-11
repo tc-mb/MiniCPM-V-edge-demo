@@ -76,6 +76,16 @@ import llama
     
     // 用于显示 LLM 输出的 cell
     var lastLLMCell: MBTextTableViewCell?
+
+    /// 首次模型加载是否已经触发。
+    ///
+    /// 模型加载放在 viewDidAppear 而不是 viewDidLoad，让 vc 的 view 先完成
+    /// 第一帧渲染、被用户看到，再开始抢 CPU 做 mtmd init（mtmd_init_from_file
+    /// 内部的 CLIP warmup + CoreML mlmodelc 编译可能用 9-15s）。这样体验上
+    /// 是"点开 → 界面立即出现 → HUD 弹出 → 后台加载"，而不是"点开 → 卡
+    /// 几秒 → 才出界面"。viewDidAppear 在 push/pop 时会被多次调用，用这个
+    /// flag 保证模型加载只触发一次。
+    private var didStartInitialModelLoad = false
     
     /// 这是一个列表
     lazy var tableView : UITableView = {
@@ -236,38 +246,57 @@ import llama
 
         self.view.backgroundColor = UIColor.mb_color(with: "#F9FAFC")
 
-        Task {
-            mtmdWrapperExample = MTMDWrapperExample()
-
-            // 订阅大模型的输出
-            self.subscriberLlamaMessageLog()
-            
-            // 启动 home vc 就加载多模态模型
-            self.checkMultiModelLoadStatusAndLoadIt()
-        }
+        // 不要把 mtmdWrapperExample 的创建 + sink 注册放在 `Task { ... }` 里。
+        // 三个调用本身都是同步立刻返回的（checkMultiModelLoad… 内部用
+        // Task.detached），外包一层 Task 反而会把它们推迟到 viewDidLoad 返回
+        // 之后的下一个 main actor turn 才执行。此时 vc 还没完全 attach 到
+        // window / nav stack，配合 Combine sink `[weak self]` 在 main queue
+        // 排队的 initial-value 投递，会触发
+        //   `objc[…]: Cannot form weak reference to instance of
+        //    MBHomeViewController. It is possible that this object was
+        //    over-released, or is in the process of deallocation.`
+        // 并引起白屏（杀 app 重启时稳定复现）。改回同步路径，sink 注册时
+        // vc 已经 alive 且未进入 dealloc。
+        mtmdWrapperExample = MTMDWrapperExample()
+        self.subscriberLlamaMessageLog()
 
         // create all sub views
         setupSubViews()
 
         // 添加观察者来监听键盘的显示和隐藏事件
-        NotificationCenter.default.addObserver(self, 
+        NotificationCenter.default.addObserver(self,
                                                selector: #selector(keyboardWillShow(notification:)),
                                                name: UIResponder.keyboardWillShowNotification, object: nil)
-        NotificationCenter.default.addObserver(self, 
+        NotificationCenter.default.addObserver(self,
                                                selector: #selector(keyboardWillHide(notification:)),
                                                name: UIResponder.keyboardWillHideNotification, object: nil)
-        
+
         // 实时录像完成的回调
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(registVideoProcessCompleteNotification(notification:)),
                                                name: NSNotification.Name("video.process.complete"), object: nil)
+
+        // 不在这里调 checkMultiModelLoadStatusAndLoadIt —— 推迟到 viewDidAppear
+        // 首次回调，让 vc 的 view 先 layout + 显示第一帧，再开始 mtmd init。
+        // 见 didStartInitialModelLoad 的注释。
     }
-    
+
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
+
         // 更新导航栏标题，确保从设置页返回时能同步最新的模型选择
         updateNavTitle()
+    }
+
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        // 首次进入时才触发模型加载。push 进设置页再回来、关闭子页面回来
+        // 都会再次回调 viewDidAppear，但模型加载只跑一次。
+        if !didStartInitialModelLoad {
+            didStartInitialModelLoad = true
+            checkMultiModelLoadStatusAndLoadIt()
+        }
     }
 
     /// support screen rotate

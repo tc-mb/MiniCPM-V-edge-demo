@@ -17,10 +17,17 @@ extension MBHomeViewController {
             return
         }
         
-        // 显示加载 HUD
+        // 显示加载 HUD。
+        // 第二行用最朴素的换行文案告诉用户"首次启动 ANE 较慢，请耐心等候"。
+        // 之所以不走 attributedText / Timer 心跳那种花哨方案：在多次切换模型
+        // 反复 reset + init 的场景里，跨 main actor 写 attributedText / 长生命
+        // 周期 Timer 持有 hud 会跟 vc dealloc 路径竞争，触发
+        // `Cannot form weak reference to MBHomeViewController` 崩溃 + 白屏。
+        // 简单的多行 UILabel 文案在 vc 完全 attach 之后再被 alpha 动画显示出
+        // 来，没有任何额外引用链，最稳。
         let hud = MBHUD.showAdded(to: self.view, animated: true)
         hud.mode = .indeterminate
-        hud.label.text = "正在加载多模态模型..."
+        hud.label.text = "正在加载多模态模型...\n首次启动 ANE 较慢，请耐心等候"
         
         Task.detached(priority: .userInitiated) {
 
@@ -65,12 +72,16 @@ extension MBHomeViewController {
             // 加载模型
             if await self.mtmdWrapperExample?.multiModelLoadingSuccess == false {
                 if selectedModelType == .V26MultiModel {
+                    // V2.6 不走 CoreML / ANE，没有冷启动文案。
                     await self.mtmdWrapperExample?.initialize(modelPath: modelURL.path, mmprojPath: mmprojURL.path)
                 } else if selectedModelType == .V4MultiModel {
-                    
+
                     await self.mtmdWrapperExample?.initialize()
-                    
-                    // warm-up
+
+                    // warm-up：注入一张全白图触发 mmproj 首次 forward。
+                    // 注意 V4.0 的 ANE 编译其实在 mtmd_init_from_file 内部的 warmup
+                    // 一帧时就已经发生，下面这次 warmup 是为了让 KV cache 处于已暖
+                    // 的状态，给用户第一张真实图片节省 ~1s 的首次 prefill 开销。
                     let whiteImage = UIImage(named: "white")
                     let whiteImageData = whiteImage?.pngData()
                     let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0]
@@ -90,7 +101,7 @@ extension MBHomeViewController {
                         nCtx: 8192
                     )
                 }
-                
+
                 // 更新模型加载状态为：加载成功，maybe 不需要，因为直接选择一张图提问时，也可能要重新 load model。
                 await self.updateImageLoadedStatus(true)
             }
@@ -112,4 +123,5 @@ extension MBHomeViewController {
             }
         }
     }
+
 }

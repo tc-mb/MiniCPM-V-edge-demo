@@ -22,6 +22,16 @@ extension MBHomeViewController {
             return
         }
 
+        // 单张图 prefill 还没完成时，禁止并发提问。
+        // mtmd_context 是单状态机：prefill_image 推进 ctx->n_past 的过程中，
+        // 如果 prefill_text 在 DispatchQueue.global 上并发跑，会读到错乱的
+        // n_past，最终模型不返回 / 输出胡乱的内容（用户报的"没回复"症状）。
+        // 给一个明确的 toast 比静默丢弃发送更友好。
+        if self.uploadSingleImageToModel {
+            self.showErrorTips("图片预处理中，请稍等再点击发送。")
+            return
+        }
+
         let inputText = textInputView.text.trimmingCharacters(in: .whitespacesAndNewlines)
         
         // 把文字也转换为 cell 放到 UITableView 上
