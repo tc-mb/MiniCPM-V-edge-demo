@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Apple Privacy Manifest，自 2024-05-01 起 iOS app 强制要求。
+
+  本仓库声明：
+  - 本应用完全本地推理，不追踪用户、不上传数据、不收集任何用户信息。
+  - 唯一会访问网络的地方是首次下载 MiniCPM-V 模型权重（GGUF + mmproj +
+    可选 CoreML mlmodelc）。下载的 URL 全部为公开模型托管：
+      huggingface.co / modelscope.cn /
+      data-transfer-huawei.obs.cn-north-4.myhuaweicloud.com
+  - 使用到的 Required Reason API：
+      UserDefaults  -> CA92.1（仅在 app 自身读写偏好，例如选中模型、切图档位）
+      File Timestamp-> 0A2A.1（仅访问 app 容器 / 用户提供 URL 的文件，例如
+                              FileManager.attributesOfItemAtPath 读 NSFileSize）
+-->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>CA92.1</string>
+            </array>
+        </dict>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>0A2A.1</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>

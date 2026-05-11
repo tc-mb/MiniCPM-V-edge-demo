@@ -27,6 +27,7 @@
 		FA3FA2682C1176E80077F733 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3FA2672C1176E80077F733 /* SceneDelegate.swift */; };
 		FA3FA26B2C1176E80077F732 /* MBHomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3FA26A2C1176E80077F732 /* MBHomeViewController.swift */; };
 		FA3FA2702C1176E90077F732 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FA3FA26F2C1176E90077F732 /* Assets.xcassets */; };
+		FAA1F00E2E2A223800088528 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = FAA1F00D2E2A223800088528 /* PrivacyInfo.xcprivacy */; };
 		FA3FA2732C1176E90077F732 /* Base in Resources */ = {isa = PBXBuildFile; fileRef = FA3FA2722C1176E90077F732 /* Base */; };
 		FA3FA27F2C1178440077F732 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA3FA27E2C1178440077F732 /* Accelerate.framework */; };
 		FA3FA2812C11784B0077F732 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FA3FA2802C11784B0077F732 /* Metal.framework */; };
@@ -146,6 +147,7 @@
 		FA3FA26F2C1176E90077F732 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		FA3FA2722C1176E90077F732 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		FA3FA2742C1176E90077F732 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FAA1F00D2E2A223800088528 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		FA3FA27E2C1178440077F732 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		FA3FA2802C11784B0077F732 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		FA4350DC2C4A897900E94116 /* MBLiveCaptureVideoFrameManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBLiveCaptureVideoFrameManager.swift; sourceTree = "<group>"; };
@@ -328,6 +330,7 @@
 				FAC283BF2C1AFD9300A4FD25 /* MiniCPM-V-demo.entitlements */,
 				FAA1195C2C12BA9C00251EB6 /* MiniCPM-V-demo-Bridging-Header.h */,
 				FA3FA2742C1176E90077F732 /* Info.plist */,
+				FAA1F00D2E2A223800088528 /* PrivacyInfo.xcprivacy */,
 				FA3FA2662C1176E80077F732 /* AppDelegate.swift */,
 				FA3FA2672C1176E80077F733 /* SceneDelegate.swift */,
 				FA3FA26F2C1176E90077F732 /* Assets.xcassets */,
@@ -761,6 +764,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FAA1F00E2E2A223800088528 /* PrivacyInfo.xcprivacy in Resources */,
 				FA3FA2702C1176E90077F732 /* Assets.xcassets in Resources */,
 				FA3FA2732C1176E90077F732 /* Base in Resources */,
 			);
@@ -1065,7 +1069,7 @@
 				CODE_SIGN_ENTITLEMENTS = "MiniCPM-V-demo/MiniCPM-V-demo.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.14;
+				CURRENT_PROJECT_VERSION = 1.15;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = VGXUYC2C5K;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1098,7 +1102,7 @@
 					"$(inherited)",
 					"$(SDKROOT)/usr/lib/swift",
 				);
-				MARKETING_VERSION = 1.14;
+				MARKETING_VERSION = 1.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tianchi.minicpmvdemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1120,7 +1124,7 @@
 				CODE_SIGN_ENTITLEMENTS = "MiniCPM-V-demo/MiniCPM-V-demo.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1.14;
+				CURRENT_PROJECT_VERSION = 1.15;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = VGXUYC2C5K;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1153,7 +1157,7 @@
 					"$(inherited)",
 					"$(SDKROOT)/usr/lib/swift",
 				);
-				MARKETING_VERSION = 1.14;
+				MARKETING_VERSION = 1.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tianchi.minicpmvdemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
