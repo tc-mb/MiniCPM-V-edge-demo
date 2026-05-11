@@ -273,24 +273,40 @@ export class LlamaEngine {
   }
 
   prefillImage(imageData: ArrayBuffer): Promise<void> {
-    return this.serial(() => {
+    return this.serial(async () => {
       if (!this.mmprojLoaded) {
-        return Promise.reject(new Error('Vision model not loaded'));
+        throw new Error('Vision model not loaded');
       }
       if (this.state.name !== 'ModelReady') {
-        return Promise.reject(new Error(`Cannot prefill image in state ${this.state.name}`));
+        throw new Error(`Cannot prefill image in state ${this.state.name}`);
       }
       hilog.info(DOMAIN, TAG, 'Prefilling image (%{public}d bytes)...', imageData.byteLength);
       this.setState(LlamaState.PrefillingImage);
 
-      const rc = nativeEngine.prefillImage(imageData);
-      if (rc !== 0) {
+      // `nativeEngine.prefillImage` returns a Promise<number> (since the
+      // HarmonyOS demo's slice=N support landed, the native side runs the
+      // whole ViT prefill on a libuv worker thread to avoid blocking the
+      // JS main thread and tripping the OS's THREAD_BLOCK_3S watchdog).
+      // We `await` it so this method's Promise<void> only resolves once
+      // the underlying decode has actually finished, preserving the
+      // synchronous-looking semantics callers rely on.
+      try {
+        const rc = await nativeEngine.prefillImage(imageData);
+        // rc=0 is success (Promise resolves with 0); any non-zero would
+        // come through .catch below, so this branch is just defensive.
+        if (rc !== 0) {
+          throw new Error(`Failed to prefill image (code: ${rc})`);
+        }
+      } catch (e) {
         this.setState(LlamaState.ModelReady);
-        return Promise.reject(new Error(`Failed to prefill image (code: ${rc})`));
+        // Native rejects with a bare int rc; wrap so callers get an Error.
+        if (e instanceof Error) {
+          throw e;
+        }
+        throw new Error(`Failed to prefill image (code: ${e})`);
       }
       hilog.info(DOMAIN, TAG, 'Image prefilled!');
       this.setState(LlamaState.ModelReady);
-      return Promise.resolve();
     });
   }
 

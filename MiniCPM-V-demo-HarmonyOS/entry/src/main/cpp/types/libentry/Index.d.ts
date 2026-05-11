@@ -32,7 +32,14 @@ export const streamUserPrompt: (
   onDone: (cancelled: boolean) => void
 ) => number;
 
-export const prefillImage: (data: ArrayBuffer) => number;
+// prefillImage runs ViT + perceiver + llama_decode for the image - heavy
+// work (10-30 s at image_max_slice_nums=9 on a phone-class CPU).  It is
+// dispatched onto a libuv worker thread internally so the JS main thread
+// stays responsive.  Resolves to 0 on success, rejects with a non-zero
+// rc otherwise (1=mmproj missing, 2=bad ArrayBuffer, 3=bitmap decode
+// failure, 4=mtmd_tokenize failure, 5=mtmd_helper_eval_chunks failure,
+// 6/7=async work setup failure).
+export const prefillImage: (data: ArrayBuffer) => Promise<number>;
 export const fullReset: () => void;
 export const cancelGeneration: () => void;
 export const unload: () => void;

@@ -467,35 +467,52 @@ napi_value ProcessSystemPrompt(napi_env env, napi_callback_info info) {
 }
 
 // =============================================================================
-// prefillImage
+// prefillImage  --  async (Promise-returning)
+//
+// Why async?  Image prefill = stb_image decode + N-slice ViT + perceiver +
+// llama_decode of a few hundred image tokens.  With image_max_slice_nums=1
+// it finishes in ~1-2 s, but at slice=9 the ViT runs 10x and the whole
+// thing easily takes 10-30 s on a HarmonyOS phone.  Doing that inline on
+// the JS thread blocks UI input long enough to trip the OS's
+// THREAD_BLOCK_3S watchdog ("APP_INPUT_BLOCK"), which then SIGKILLs and
+// auto-restarts the process - users see an instant "flash crash" right
+// after picking an image when they bump the slider above 1.
+//
+// Fix mirrors what `streamUserPrompt` already does on this same file:
+// hand the heavy work off to a worker thread.  Here we use libuv-backed
+// `napi_async_work` (simpler than tsfn since there's only one completion
+// event), and resolve / reject a JS Promise with the int return code.
+//
+// Ownership: we copy the image bytes out of the JS ArrayBuffer up front
+// so we don't depend on JS-side keep-alive while the worker thread runs.
 // =============================================================================
 
-napi_value PrefillImage(napi_env env, napi_callback_info info) {
-    size_t argc = 1;
-    napi_value argv[1];
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+struct PrefillWork {
+    napi_async_work          work        = nullptr;
+    napi_deferred            deferred    = nullptr;
+    std::vector<uint8_t>     bytes;       // copied PNG/JPEG/... buffer
+    int                      rc          = 0;
+    llama_pos                new_pos     = 0;
+};
 
+static void PrefillExecute(napi_env /*env*/, void *data) {
+    // Worker thread: must NOT touch napi_env or any JS value.  The
+    // native llama / mtmd globals are protected against concurrent use
+    // by the JS-side `LlamaEngine.serial(...)` chain, which guarantees
+    // at most one PrefillExecute is alive at a time.
+    auto *w = static_cast<PrefillWork *>(data);
     if (!g_ctx_vision) {
-        LOGe("PrefillImage: mmproj not loaded!");
-        return napi_make_int(env, 1);
-    }
-
-    void  *data = nullptr;
-    size_t length = 0;
-    napi_status st = napi_get_arraybuffer_info(env, argv[0], &data, &length);
-    if (st != napi_ok || !data || length == 0) {
-        LOGe("PrefillImage: invalid ArrayBuffer (status=%{public}d, len=%{public}zu)",
-             (int) st, length);
-        return napi_make_int(env, 2);
+        LOGe("PrefillExecute: mmproj not loaded!");
+        w->rc = 1;
+        return;
     }
 
     auto *bitmap = mtmd_helper_bitmap_init_from_buf(
-        g_ctx_vision,
-        reinterpret_cast<const unsigned char *>(data),
-        length);
+        g_ctx_vision, w->bytes.data(), w->bytes.size());
     if (!bitmap) {
-        LOGe("PrefillImage: Failed to create bitmap from image buffer");
-        return napi_make_int(env, 3);
+        LOGe("PrefillExecute: Failed to create bitmap (%{public}zu bytes)", w->bytes.size());
+        w->rc = 3;
+        return;
     }
 
     mtmd_input_text text;
@@ -509,24 +526,107 @@ napi_value PrefillImage(napi_env env, napi_callback_info info) {
     mtmd_bitmap_free(bitmap);
 
     if (res != 0) {
-        LOGe("PrefillImage: mtmd_tokenize failed %{public}d", res);
+        LOGe("PrefillExecute: mtmd_tokenize failed %{public}d", res);
         mtmd_input_chunks_free(chunks);
-        return napi_make_int(env, 4);
+        w->rc = 4;
+        return;
     }
-    llama_pos new_n_past;
+    llama_pos new_n_past = 0;
     if (mtmd_helper_eval_chunks(g_ctx_vision, g_context, chunks,
                                 current_position, 0, BATCH_SIZE,
                                 false, &new_n_past)) {
-        LOGe("PrefillImage: mtmd_helper_eval_chunks failed!");
+        LOGe("PrefillExecute: mtmd_helper_eval_chunks failed!");
         mtmd_input_chunks_free(chunks);
-        return napi_make_int(env, 5);
+        w->rc = 5;
+        return;
     }
-    current_position  = new_n_past;
     mtmd_input_chunks_free(chunks);
-    g_image_prefilled = true;
-    g_vision_mode     = true;
-    LOGi("PrefillImage: done, current_position: %{public}d", current_position);
-    return napi_make_int(env, 0);
+    w->rc      = 0;
+    w->new_pos = new_n_past;
+}
+
+static void PrefillComplete(napi_env env, napi_status /*status*/, void *data) {
+    // JS thread: safe to touch napi_env again.  Commit the new global
+    // position now (not in the worker) so that JS-observable side
+    // effects line up with Promise resolution.
+    auto *w = static_cast<PrefillWork *>(data);
+    if (w->rc == 0) {
+        current_position  = w->new_pos;
+        g_image_prefilled = true;
+        g_vision_mode     = true;
+        LOGi("PrefillImage: done, current_position: %{public}d", current_position);
+    }
+    napi_value result_code = napi_make_int(env, w->rc);
+    if (w->rc == 0) {
+        napi_resolve_deferred(env, w->deferred, result_code);
+    } else {
+        // Reject so JS-side `await engine.prefillImage(...)` throws,
+        // matching the pre-existing error-handling expectations.
+        napi_reject_deferred(env, w->deferred, result_code);
+    }
+    napi_delete_async_work(env, w->work);
+    delete w;
+}
+
+napi_value PrefillImage(napi_env env, napi_callback_info info) {
+    size_t argc = 1;
+    napi_value argv[1];
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+
+    napi_value promise;
+    napi_deferred deferred;
+    napi_create_promise(env, &deferred, &promise);
+
+    // Fail-fast: short-circuit on caller errors (mmproj missing, bad
+    // ArrayBuffer) before we kick off a thread.  Reject on the JS
+    // thread synchronously to keep the rc semantics of the old API.
+    auto reject_with_code = [&](int code) {
+        napi_value v = napi_make_int(env, code);
+        napi_reject_deferred(env, deferred, v);
+        return promise;
+    };
+
+    if (!g_ctx_vision) {
+        LOGe("PrefillImage: mmproj not loaded!");
+        return reject_with_code(1);
+    }
+
+    void  *data = nullptr;
+    size_t length = 0;
+    napi_status st = napi_get_arraybuffer_info(env, argv[0], &data, &length);
+    if (st != napi_ok || !data || length == 0) {
+        LOGe("PrefillImage: invalid ArrayBuffer (status=%{public}d, len=%{public}zu)",
+             (int) st, length);
+        return reject_with_code(2);
+    }
+
+    auto *w = new PrefillWork;
+    w->deferred = deferred;
+    // Copy bytes so we don't keep a reference into a JS-owned ArrayBuffer
+    // while the worker thread is in flight (the ArrayBuffer's backing
+    // store could be GC'd or compacted between now and worker entry).
+    w->bytes.assign(
+        reinterpret_cast<const uint8_t *>(data),
+        reinterpret_cast<const uint8_t *>(data) + length);
+
+    napi_value resource_name;
+    napi_create_string_utf8(env, "MiniCPMV.PrefillImage", NAPI_AUTO_LENGTH, &resource_name);
+    st = napi_create_async_work(env, nullptr, resource_name,
+                                PrefillExecute, PrefillComplete,
+                                w, &w->work);
+    if (st != napi_ok) {
+        LOGe("PrefillImage: napi_create_async_work failed (status=%{public}d)", (int) st);
+        delete w;
+        return reject_with_code(6);
+    }
+    st = napi_queue_async_work(env, w->work);
+    if (st != napi_ok) {
+        LOGe("PrefillImage: napi_queue_async_work failed (status=%{public}d)", (int) st);
+        napi_delete_async_work(env, w->work);
+        delete w;
+        return reject_with_code(7);
+    }
+    return promise;
 }
 
 // =============================================================================
