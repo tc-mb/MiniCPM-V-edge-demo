@@ -28,50 +28,37 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 
 ---
 
-## Android — APK
+## Android — APK (Coming Soon)
 
-**Download:** [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) — pick the latest `MiniCPM-V-demo-Android-*.apk`.
+The pre-built **APK is not released yet.** All Android demo videos and screenshots you may have seen are recorded directly from the source code in this repository, so the behaviour is exactly what you would build locally today.
 
-### Requirements
+The public APK is still being polished and will be published shortly. Early builds may have rough edges; we plan to iterate frequently and **welcome issues and feedback**.
 
-* Android device with a **64-bit ARM SoC** (`arm64-v8a`)
-* **Android 8.0 (API 26) or later**
-* ≥ 6 GB RAM recommended
+In the meantime you can:
 
-### How to install
-
-1. Download the latest `.apk` from the Releases page on your phone.
-2. If you see a security prompt, allow installation from this source in **Settings → Apps → Install unknown apps**.
-3. Open the installed **MiniCPM-V Demo** app and tap **Download** in the in-app **Model Manager** to fetch the GGUF model files.
+* Build and run the Android demo from source — see the [Android Demo section in the README](README.md#2-android-demo).
+* Watch the [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) page (or **Watch → Custom → Releases** on the repo) to be notified when the first APK is published.
+* File any problems or suggestions in [Issues](https://github.com/tc-mb/MiniCPM-V-edge-demo/issues).
 
 ---
 
-## HarmonyOS NEXT — HAP
+## HarmonyOS NEXT — HAP (Coming Soon)
 
-**Download:** [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) — pick the latest `MiniCPM-V-demo-HarmonyOS-*.hap`.
+The pre-built **HAP is not released yet.** All HarmonyOS demo videos and screenshots come from the source code in this repository, exactly the same code you can build today.
 
-### Requirements
+The public HAP is still being polished and will be published shortly. Early builds may have rough edges; we will iterate quickly — please **open issues** so we can prioritise fixes.
 
-* HarmonyOS device on **API 12 or later** (e.g. nova 14 Vitality / Mate 60 / Pura 70)
-* 64-bit ARM (`arm64-v8a`)
-* ≥ 6 GB RAM recommended
+In the meantime you can:
 
-### How to install
-
-1. Enable **Developer Mode** and **USB debugging** on the device.
-2. Connect to a PC with `hdc` installed, then run:
-
-   ```bash
-   hdc install MiniCPM-V-demo-HarmonyOS-*.hap
-   ```
-3. Open the installed app and tap **Download** in the in-app **Model Manager** to fetch the model files.
-
-> The HarmonyOS distribution channel inside Huawei AppGallery is being prepared; for now please use the HAP package above.
+* Build and run the HarmonyOS demo from source — see the [HarmonyOS Demo section in the README](README.md#3-harmonyos-demo).
+* Subscribe to [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) for the first HAP drop.
+* File any problems or suggestions in [Issues](https://github.com/tc-mb/MiniCPM-V-edge-demo/issues).
 
 ---
 
 ## Notes
 
+* All demo videos / screenshots across the three platforms are recorded from this repository's source code; the upcoming pre-built APK / HAP packages will be built straight from the same code.
 * The first launch of any of the three apps will download the GGUF model files (a few GB). Use Wi-Fi for the initial download.
 * These demos are intended for **research / preview** only and are not optimised products.
-* Found a bug or have a suggestion? Please file an [issue](https://github.com/tc-mb/MiniCPM-V-edge-demo/issues) or send feedback through TestFlight (iOS).
+* Early pre-built APK / HAP releases may have rough edges — we will keep updating them. Please file an [issue](https://github.com/tc-mb/MiniCPM-V-edge-demo/issues) or send feedback through TestFlight (iOS) so we can improve quickly.
