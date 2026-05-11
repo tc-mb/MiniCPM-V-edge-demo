@@ -24,9 +24,16 @@
 > git submodule update --init --recursive
 > ```
 
+README 分为两大部分：
+
+* **第一部分 — 平台安装与构建**：iOS / Android / HarmonyOS 三端如何编译运行。
+* **第二部分 — GGUF 模型文件**：三个 MiniCPM-V 版本的模型权重下载方式，以及对应的最小端侧硬件要求。
+
 ---
 
-## 1. iOS Demo
+## 第一部分　平台安装与构建
+
+### 1.1 iOS Demo
 
 **注意：在 iOS 设备上部署和测试 demo，可能需要 Apple Developer 账号。**
 
@@ -50,7 +57,7 @@
 
 **注意：如果遇到 `thirdparty/llama.xcframework` 路径相关报错，请按下方步骤手动构建 `llama.xcframework`。**
 
-### 手动构建 llama.xcframework
+#### 手动构建 llama.xcframework
 
 直接在子模块内构建（无需重复 clone）：
 
@@ -60,15 +67,14 @@ cd llama.cpp
 cp -r ./build-apple/llama.xcframework ../MiniCPM-V-demo/thirdparty
 ```
 
----
-
-## 2. Android Demo
+### 1.2 Android Demo
 
 环境要求：
 
 * Android Studio（Giraffe 或更新版本）
 * Android SDK + NDK（项目固定 NDK `28.2.13676358`、CMake `3.22.1`）
-* 64 位 ARM 架构（`arm64-v8a`）的真机，建议内存 ≥ 6 GB
+* 64 位 ARM 架构（`arm64-v8a`）的真机
+* 设备内存：参见[第二部分](#第二部分gguf-模型文件)中按模型给出的内存要求
 
 构建并运行：
 
@@ -81,15 +87,14 @@ cd MiniCPM-V-demo-Android
 
 首次启动时，应用会自动把 GGUF 模型文件下载到外部存储。也可以通过 `adb push` 手动侧载模型文件——具体目录结构请参考 App 内的 **模型管理** 页面。
 
----
-
-## 3. HarmonyOS Demo
+### 1.3 HarmonyOS Demo
 
 环境要求：
 
 * DevEco Studio 5.0 或更新版本（含 Native SDK / NDK）
 * HarmonyOS API 12 及以上的真机或模拟器（如 nova 14 活力版 / Mate 60 / Pura 70 等）
 * 64 位 ARM 架构（`arm64-v8a`）
+* 设备内存：参见[第二部分](#第二部分gguf-模型文件)中按模型给出的内存要求
 
 构建并运行：
 
@@ -103,51 +108,47 @@ cd MiniCPM-V-demo-Android
 
 ---
 
-## 4. MiniCPM-V 2.6 GGUF 模型文件
+## 第二部分　GGUF 模型文件
 
-### 1: 下载官方 GGUF 文件
+### 硬件要求
+
+端侧推理所需的内存大约等于 *模型权重大小 + KV cache + 视觉编码器与 llama.cpp 的若干百兆运行时开销*。下表给出的"推荐设备内存"已经为操作系统和 demo 应用本身预留了余量。
+
+| 模型 | LLM 参数量 | 推荐量化 | LLM 文件（Q4） | mmproj（f16） | 总下载量 | 推荐设备内存 |
+| --- | --- | --- | --- | --- | --- | --- |
+| MiniCPM-V 2.6 | 8B | Q4_K_M | ~4.4 GB | ~1.0 GB | ~5.4 GB | **≥ 8 GB** |
+| MiniCPM-V 4.0 | 4.1B | Q4_K_M | ~2.0 GB | ~0.9 GB | ~2.9 GB | **≥ 6 GB** |
+| MiniCPM-V 4.6 | 1.3B | Q4_K_M | ~0.5 GB | ~1.1 GB | ~1.6 GB | **≥ 6 GB** |
+
+补充说明：
+
+* `mmproj` 是视觉投影器 + ViT 权重，统一保留 **f16** 精度——视觉塔做低比特量化对感知质量的伤害比 LLM 更明显。
+* 三端 demo 默认上下文长度为 4K token。上下文越长，KV cache 占用近似线性增长，临界设备上可能需要相应调小。
+* Android / HarmonyOS 上跑 V 2.6 强烈建议 8 GB 及以上内存。iOS 上 V 2.6 已在 iPhone 15 Pro / 16 系列以及搭载 M 系列芯片的较新 iPad 上验证；早期 6 GB 内存设备容易出现频繁换页。
+
+### 2.1 MiniCPM-V 2.6 GGUF 模型文件
+
+#### 下载官方 GGUF 文件
 
 * HuggingFace: [https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf](https://huggingface.co/openbmb/MiniCPM-V-2_6-gguf)
 * ModelScope: [https://modelscope.cn/models/OpenBMB/MiniCPM-V-2_6-gguf](https://modelscope.cn/models/OpenBMB/MiniCPM-V-2_6-gguf)
 
 请从仓库下载语言模型文件（例如 `ggml-model-Q4_0.gguf`）以及视觉模型文件（`mmproj-model-f16.gguf`）。
 
-## 5. MiniCPM-V 4.0 GGUF 模型文件
+### 2.2 MiniCPM-V 4.0 GGUF 模型文件
 
-### 方式 A：下载官方 GGUF 文件
+#### 下载官方 GGUF 文件
 
 * HuggingFace: [https://huggingface.co/openbmb/MiniCPM-V-4-gguf](https://huggingface.co/openbmb/MiniCPM-V-4-gguf)
 * ModelScope: [https://modelscope.cn/models/OpenBMB/MiniCPM-V-4-gguf](https://modelscope.cn/models/OpenBMB/MiniCPM-V-4-gguf)
 
 请从仓库下载语言模型文件（例如 `ggml-model-Q4_K_M.gguf`）以及视觉模型文件（`mmproj-model-f16.gguf`）。
 
-### 方式 B：从 PyTorch 模型转换
+### 2.3 MiniCPM-V 4.6 GGUF 模型文件
 
-将 MiniCPM-V-4 的 PyTorch 模型下载到名为 `MiniCPM-V-4` 的文件夹：
+#### 下载官方 GGUF 文件
 
-* HuggingFace: [https://huggingface.co/openbmb/MiniCPM-V-4](https://huggingface.co/openbmb/MiniCPM-V-4)
-* ModelScope: [https://modelscope.cn/models/OpenBMB/MiniCPM-V-4](https://modelscope.cn/models/OpenBMB/MiniCPM-V-4)
+* HuggingFace: [https://huggingface.co/openbmb/MiniCPM-V-4.6-gguf](https://huggingface.co/openbmb/MiniCPM-V-4.6-gguf)
+* ModelScope: [https://modelscope.cn/models/OpenBMB/MiniCPM-V-4.6-gguf](https://modelscope.cn/models/OpenBMB/MiniCPM-V-4.6-gguf)
 
-将 PyTorch 模型转换为 GGUF 格式：
-
-```bash
-cd llama.cpp
-
-python ./tools/mtmd/legacy-models/minicpmv-surgery.py -m ../MiniCPM-V-4
-
-python ./tools/mtmd/legacy-models/minicpmv-convert-image-encoder-to-gguf.py -m ../MiniCPM-V-4 --minicpmv-projector ../MiniCPM-V-4/minicpmv.projector --output-dir ../MiniCPM-V-4/ --minicpmv_version 5
-
-python ./convert_hf_to_gguf.py ../MiniCPM-V-4/model
-
-# int4 量化
-./llama-quantize ../MiniCPM-V-4/model/Model-3.6B-f16.gguf ../MiniCPM-V-4/model/ggml-model-Q4_K_M.gguf Q4_K_M
-```
-
-## 6. MiniCPM-V 4.6 GGUF 模型文件
-
-### 1: 下载官方 GGUF 文件
-
-* HuggingFace: [https://huggingface.co/openbmb/MiniCPM-V-4_6-gguf](https://huggingface.co/openbmb/MiniCPM-V-4_6-gguf)
-* ModelScope: [https://modelscope.cn/models/OpenBMB/MiniCPM-V-4_6-gguf](https://modelscope.cn/models/OpenBMB/MiniCPM-V-4_6-gguf)
-
-请从仓库下载语言模型文件（例如 `minicpmv46-llm-Q4_K_M.gguf`）以及视觉模型文件（`mmproj-v46-model-f16.gguf`）。
+请从仓库下载语言模型文件（例如 `MiniCPM-V-4_6-Q4_K_M.gguf`）以及视觉模型文件（`mmproj-model-f16.gguf`）。
