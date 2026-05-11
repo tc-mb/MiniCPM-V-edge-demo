@@ -33,7 +33,7 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 
 ## Android — APK
 
-**Latest:** **v1.7** &nbsp;·&nbsp; [Download `MiniCPM-V-demo-Android-v1.7.apk`](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/download/android-v1.7/MiniCPM-V-demo-Android-v1.7.apk) &nbsp;·&nbsp; [Release notes](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/tag/android-v1.7) &nbsp;·&nbsp; [All versions](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases?q=tag%3Aandroid)
+**Latest:** **v1.7** &nbsp;·&nbsp; [Download `MiniCPM-V-demo-Android-v1.7.apk`](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/download/android-v1.7/MiniCPM-V-demo-Android-v1.7.apk) &nbsp;·&nbsp; [Release notes](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/android-v1.7) &nbsp;·&nbsp; [All versions](https://github.com/OpenBMB/MiniCPM-V-Apps/releases?q=tag%3Aandroid)
 
 * MD5: `9d16d89205cc6c43b68886a42b560600`
 * Size: ~16 MB
@@ -54,7 +54,7 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 
 ## HarmonyOS NEXT — HAP
 
-**Latest:** **v1.1** &nbsp;·&nbsp; [Download `MiniCPM-V-demo-HarmonyOS-v1.1.hap`](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/download/harmonyos-v1.1/MiniCPM-V-demo-HarmonyOS-v1.1.hap) &nbsp;·&nbsp; [Release notes](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/tag/harmonyos-v1.1) &nbsp;·&nbsp; [All versions](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases?q=tag%3Aharmonyos)
+**Latest:** **v1.1** &nbsp;·&nbsp; [Download `MiniCPM-V-demo-HarmonyOS-v1.1.hap`](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/download/harmonyos-v1.1/MiniCPM-V-demo-HarmonyOS-v1.1.hap) &nbsp;·&nbsp; [Release notes](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/harmonyos-v1.1) &nbsp;·&nbsp; [All versions](https://github.com/OpenBMB/MiniCPM-V-Apps/releases?q=tag%3Aharmonyos)
 
 * MD5: `f3824e4b85940fcd8fbfe8f9a566519b`
 * Size: ~29 MB
@@ -83,4 +83,4 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 
 * The first launch of any of the three apps will download the GGUF model files (a few GB). Use Wi-Fi for the initial download.
 * These demos are intended for **research / preview** only and are not optimised products.
-* Found a bug or have a suggestion? Please file an [issue](https://github.com/tc-mb/MiniCPM-V-edge-demo/issues) or send feedback through TestFlight (iOS).
+* Found a bug or have a suggestion? Please file an [issue](https://github.com/OpenBMB/MiniCPM-V-Apps/issues) or send feedback through TestFlight (iOS).

@@ -19,8 +19,8 @@
 > **提示**：本项目通过 git submodule 引入 `llama.cpp`，clone 后请运行：
 >
 > ```bash
-> git clone https://github.com/tc-mb/MiniCPM-V-edge-demo.git
-> cd MiniCPM-V-edge-demo
+> git clone https://github.com/OpenBMB/MiniCPM-V-Apps.git
+> cd MiniCPM-V-Apps
 > git submodule update --init --recursive
 > ```
 

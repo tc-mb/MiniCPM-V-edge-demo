@@ -33,7 +33,7 @@
 
 ## Android —— APK
 
-**最新版本：** **v1.7** &nbsp;·&nbsp; [下载 `MiniCPM-V-demo-Android-v1.7.apk`](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/download/android-v1.7/MiniCPM-V-demo-Android-v1.7.apk) &nbsp;·&nbsp; [发布说明](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/tag/android-v1.7) &nbsp;·&nbsp; [全部版本](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases?q=tag%3Aandroid)
+**最新版本：** **v1.7** &nbsp;·&nbsp; [下载 `MiniCPM-V-demo-Android-v1.7.apk`](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/download/android-v1.7/MiniCPM-V-demo-Android-v1.7.apk) &nbsp;·&nbsp; [发布说明](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/android-v1.7) &nbsp;·&nbsp; [全部版本](https://github.com/OpenBMB/MiniCPM-V-Apps/releases?q=tag%3Aandroid)
 
 * MD5: `9d16d89205cc6c43b68886a42b560600`
 * 大小：约 16 MB
@@ -54,7 +54,7 @@
 
 ## HarmonyOS NEXT —— HAP
 
-**最新版本：** **v1.1** &nbsp;·&nbsp; [下载 `MiniCPM-V-demo-HarmonyOS-v1.1.hap`](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/download/harmonyos-v1.1/MiniCPM-V-demo-HarmonyOS-v1.1.hap) &nbsp;·&nbsp; [发布说明](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/tag/harmonyos-v1.1) &nbsp;·&nbsp; [全部版本](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases?q=tag%3Aharmonyos)
+**最新版本：** **v1.1** &nbsp;·&nbsp; [下载 `MiniCPM-V-demo-HarmonyOS-v1.1.hap`](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/download/harmonyos-v1.1/MiniCPM-V-demo-HarmonyOS-v1.1.hap) &nbsp;·&nbsp; [发布说明](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/harmonyos-v1.1) &nbsp;·&nbsp; [全部版本](https://github.com/OpenBMB/MiniCPM-V-Apps/releases?q=tag%3Aharmonyos)
 
 * MD5: `f3824e4b85940fcd8fbfe8f9a566519b`
 * 大小：约 29 MB
@@ -83,4 +83,4 @@
 
 * 三端 App 在 **首次启动** 时都会下载 GGUF 模型文件（数 GB），建议使用 Wi-Fi 完成首次下载。
 * 当前版本仅用于 **研究 / 预览**，并非正式产品。
-* 发现问题或有改进建议？欢迎提交 [Issue](https://github.com/tc-mb/MiniCPM-V-edge-demo/issues)，或通过 TestFlight（iOS）反馈。
+* 发现问题或有改进建议？欢迎提交 [Issue](https://github.com/OpenBMB/MiniCPM-V-Apps/issues)，或通过 TestFlight（iOS）反馈。

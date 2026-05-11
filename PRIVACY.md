@@ -57,4 +57,4 @@ on this page with an updated date.
 ## Contact
 
 For questions about this policy, please open an issue at:
-https://github.com/tc-mb/MiniCPM-V-edge-demo/issues
+https://github.com/OpenBMB/MiniCPM-V-Apps/issues

@@ -22,14 +22,14 @@
 ## 2. 第一次打开工程
 
 ```bash
-git clone https://github.com/tc-mb/MiniCPM-V-edge-demo.git
-cd MiniCPM-V-edge-demo
+git clone https://github.com/OpenBMB/MiniCPM-V-Apps.git
+cd MiniCPM-V-Apps
 git submodule update --init --recursive
 ```
 
 之后用 DevEco Studio：
 
-1. `File` → `Open` 选 `MiniCPM-V-edge-demo/MiniCPM-V-demo-HarmonyOS/`
+1. `File` → `Open` 选 `MiniCPM-V-Apps/MiniCPM-V-demo-HarmonyOS/`
 2. 等右下角 SDK / oh_modules 自动同步完成
 3. `File` → `Project Structure` → `Signing Configs` → 勾 **Automatically generate signature**（首次会要求登录华为开发者账号）
 4. 把真机连上 mac，开启开发者模式与 USB 调试，`hdc list targets` 能看到设备序列号即可

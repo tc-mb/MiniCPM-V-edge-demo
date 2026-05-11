@@ -38,7 +38,7 @@ endif()
 
 # llama.cpp source lives at the repository root so it is shared with the
 # iOS and Android demos. Layout:
-#   MiniCPM-V-edge-demo/
+#   MiniCPM-V-Apps/
 #     ├── llama.cpp/
 #     ├── MiniCPM-V-demo-Android/
 #     ├── MiniCPM-V-demo/                         (iOS)
