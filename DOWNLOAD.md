@@ -30,7 +30,10 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 
 ## Android — APK
 
-**Download:** [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) — pick the latest `MiniCPM-V-demo-Android-*.apk`.
+**Latest:** **v1.7** &nbsp;·&nbsp; [Download `MiniCPM-V-demo-Android-v1.7.apk`](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/download/android-v1.7/MiniCPM-V-demo-Android-v1.7.apk) &nbsp;·&nbsp; [Release notes](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/tag/android-v1.7) &nbsp;·&nbsp; [All versions](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases?q=tag%3Aandroid)
+
+* MD5: `9d16d89205cc6c43b68886a42b560600`
+* Size: ~16 MB
 
 ### Requirements
 
@@ -40,7 +43,7 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 
 ### How to install
 
-1. Download the latest `.apk` from the Releases page on your phone.
+1. Download the latest `.apk` from the link above onto your phone.
 2. If you see a security prompt, allow installation from this source in **Settings → Apps → Install unknown apps**.
 3. Open the installed **MiniCPM-V Demo** app and tap **Download** in the in-app **Model Manager** to fetch the GGUF model files.
 
@@ -48,7 +51,10 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 
 ## HarmonyOS NEXT — HAP
 
-**Download:** [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) — pick the latest `MiniCPM-V-demo-HarmonyOS-*.hap`.
+**Latest:** **v1.1** &nbsp;·&nbsp; [Download `MiniCPM-V-demo-HarmonyOS-v1.1.hap`](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/download/harmonyos-v1.1/MiniCPM-V-demo-HarmonyOS-v1.1.hap) &nbsp;·&nbsp; [Release notes](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/tag/harmonyos-v1.1) &nbsp;·&nbsp; [All versions](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases?q=tag%3Aharmonyos)
+
+* MD5: `f3824e4b85940fcd8fbfe8f9a566519b`
+* Size: ~29 MB
 
 ### Requirements
 
@@ -62,7 +68,7 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 2. Connect to a PC with `hdc` installed, then run:
 
    ```bash
-   hdc install MiniCPM-V-demo-HarmonyOS-*.hap
+   hdc install MiniCPM-V-demo-HarmonyOS-v1.1.hap
    ```
 3. Open the installed app and tap **Download** in the in-app **Model Manager** to fetch the model files.
 

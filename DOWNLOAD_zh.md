@@ -30,7 +30,10 @@
 
 ## Android —— APK
 
-**下载地址：** [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) —— 选择最新的 `MiniCPM-V-demo-Android-*.apk`。
+**最新版本：** **v1.7** &nbsp;·&nbsp; [下载 `MiniCPM-V-demo-Android-v1.7.apk`](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/download/android-v1.7/MiniCPM-V-demo-Android-v1.7.apk) &nbsp;·&nbsp; [发布说明](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/tag/android-v1.7) &nbsp;·&nbsp; [全部版本](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases?q=tag%3Aandroid)
+
+* MD5: `9d16d89205cc6c43b68886a42b560600`
+* 大小：约 16 MB
 
 ### 系统要求
 
@@ -40,7 +43,7 @@
 
 ### 安装步骤
 
-1. 在手机上前往 Releases 页面下载最新 `.apk` 安装包。
+1. 在手机上点击上方下载链接获取最新 `.apk` 安装包。
 2. 若系统提示安全风险，请在 **设置 → 应用 → 安装未知应用** 中允许安装来源。
 3. 打开 **MiniCPM-V Demo**，进入 App 内的 **模型管理** 页面点击 **下载模型** 即可。
 
@@ -48,7 +51,10 @@
 
 ## HarmonyOS NEXT —— HAP
 
-**下载地址：** [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) —— 选择最新的 `MiniCPM-V-demo-HarmonyOS-*.hap`。
+**最新版本：** **v1.1** &nbsp;·&nbsp; [下载 `MiniCPM-V-demo-HarmonyOS-v1.1.hap`](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/download/harmonyos-v1.1/MiniCPM-V-demo-HarmonyOS-v1.1.hap) &nbsp;·&nbsp; [发布说明](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases/tag/harmonyos-v1.1) &nbsp;·&nbsp; [全部版本](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases?q=tag%3Aharmonyos)
+
+* MD5: `f3824e4b85940fcd8fbfe8f9a566519b`
+* 大小：约 29 MB
 
 ### 系统要求
 
@@ -62,7 +68,7 @@
 2. 连接到已安装 `hdc` 工具的电脑，执行：
 
    ```bash
-   hdc install MiniCPM-V-demo-HarmonyOS-*.hap
+   hdc install MiniCPM-V-demo-HarmonyOS-v1.1.hap
    ```
 3. 打开 App，进入应用内的 **模型管理** 页面点击 **下载模型** 即可。
 

@@ -31,6 +31,10 @@ The README is organised in two parts:
 
 ---
 
+> **Just want to install the app?** Pre-built TestFlight (iOS) / APK (Android) / HAP (HarmonyOS) packages and step-by-step install instructions are in **[DOWNLOAD.md](DOWNLOAD.md)**. The rest of this README is only needed if you want to build from source.
+
+---
+
 ## Part 1. Platform Setup
 
 ### 1.1 iOS Demo
