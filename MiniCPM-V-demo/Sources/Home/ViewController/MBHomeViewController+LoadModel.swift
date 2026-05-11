@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 
 extension MBHomeViewController {
-    
+
     /// 尝试重新加载多模态模型
     func checkMultiModelLoadStatusAndLoadIt() {
     
@@ -79,11 +79,22 @@ extension MBHomeViewController {
                     _ = await self.mtmdWrapperExample?.addImageInBackground(whiteImagePath)
                 } else if selectedModelType == .V46MultiModel {
                     let coremlPath = MiniCPMV46CoreMLBootstrap.resolvedCoreMLPathInDocuments()
-                    await self.mtmdWrapperExample?.initialize(
-                        modelPath: modelURL.path,
-                        mmprojPath: mmprojURL.path,
-                        coremlPath: coremlPath
-                    )
+                    if let coremlPath = coremlPath {
+                        await self.mtmdWrapperExample?.initialize(
+                            modelPath: modelURL.path,
+                            mmprojPath: mmprojURL.path,
+                            coremlPath: coremlPath
+                        )
+                    }
+                    // CoreML not available or loading failed → fallback to ggml Metal GPU
+                    if self.mtmdWrapperExample?.multiModelLoadingSuccess != true {
+                        print("[CoreML] loading failed, fallback to ggml Metal GPU")
+                        await self.mtmdWrapperExample?.initialize(
+                            modelPath: modelURL.path,
+                            mmprojPath: mmprojURL.path,
+                            coremlPath: nil
+                        )
+                    }
                 }
                 
                 // 更新模型加载状态为：加载成功，maybe 不需要，因为直接选择一张图提问时，也可能要重新 load model。
