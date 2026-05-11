@@ -1,14 +1,14 @@
-# Download MiniCPM-V Demo Apps
+# Install MiniCPM-V Apps
 
 **English** | [中文](DOWNLOAD_zh.md)
 
-Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below. All three apps run the MiniCPM-V multimodal model fully **on-device** via `llama.cpp` — no server, no cloud, no data leaves your phone.
+Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below. All three apps run the MiniCPM-V multimodal model fully **on-device** via `llama.cpp` — no remote server, no data leaves your phone.
 
 > Looking to build from source instead? See the main [README](README.md).
 
 ---
 
-## iOS — TestFlight (Beta)
+## iOS — TestFlight
 
 **Public link:** [https://testflight.apple.com/join/yNKyFZwW](https://testflight.apple.com/join/yNKyFZwW)
 
@@ -28,7 +28,7 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 
 ---
 
-## Android — APK (GitHub Releases)
+## Android — APK
 
 **Download:** [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) — pick the latest `MiniCPM-V-demo-Android-*.apk`.
 
@@ -46,7 +46,7 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 
 ---
 
-## HarmonyOS NEXT — HAP (GitHub Releases)
+## HarmonyOS NEXT — HAP
 
 **Download:** [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) — pick the latest `MiniCPM-V-demo-HarmonyOS-*.hap`.
 
