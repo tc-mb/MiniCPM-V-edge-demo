@@ -245,16 +245,21 @@ extension MBHomeViewController {
                                 debugLog("-->> selected.video = \(photoAsset)")
                                 
                                 Task {
-                                    
-                                    // 如果没有加载模型，要先加载多模态模型
-                                    
+
                                     // 因为在 outputImageURL 放着是 video 的 path
                                     // 进行 video 抽帧处理
                                     if let path = self.outputImageURL?.path() {
                                         let videoURL = URL(fileURLWithPath: path)
-                                        // 每 1 秒 1 帧抽取（目前只支持最多 16 帧，所以不管多长的时候，要按这个最大 16 帧来抽取）
-                                        let extractor = MBVideoFrameExtractor(videoURL: videoURL, fps: 1)
-                                        
+
+                                        // 视频抽帧上限：MiniCPM-V 4.6 走 64 帧（1fps，超长则均匀抽帧），
+                                        // 老的 V2.6 / V4.0 维持 16 帧上限避免回归（旧 demo 时代的视频路径）。
+                                        let maxFrames = (self.mtmdWrapperExample?.currentUsingModelType == .V46MultiModel)
+                                            ? 64
+                                            : 16
+                                        let extractor = MBVideoFrameExtractor(videoURL: videoURL,
+                                                                              fps: 1,
+                                                                              supportTotalFrames: maxFrames)
+
                                         // 异步视频抽帧算法
                                         await extractor.extractFrames { [weak self] images in
                                             if let images = images {

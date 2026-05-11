@@ -53,7 +53,12 @@ import llama
     ///   - mmprojPath: 多模态投影模型路径
     ///   - coremlPath: CoreML 模型路径，默认为空（不使用 ANE 加速）
     ///   - nPredict: 预测长度，默认 100
-    ///   - nCtx: 上下文长度，默认 4096
+    ///   - nCtx: 上下文长度，默认 4096（V2.6 / V4.0 用此默认，避免高 KV 内存压力）。
+    ///     V4.6 视频路径调用方应显式传入 8192：v46 在 slice=1 下每帧编码
+    ///     ~64 visual tokens，64 帧 × 64 = 4096 token 恰好顶死 4096 上下文，
+    ///     再叠加 system prompt + chat template wrapper 必然溢出 KV cache。
+    ///     v46 模型本身 max_position_embeddings ≥ 32K，远高于 8192；
+    ///     KV 多占约 270 MB，iPhone 14 Pro 及以上完全 hold 得住。
     ///   - nThreads: 线程数，默认 4
     ///   - temperature: 温度参数，默认 0.7（对齐模型 generation_config.json：
     ///     do_sample=true, temperature=0.7, top_k=0, top_p=1.0, repetition_penalty=1.0；

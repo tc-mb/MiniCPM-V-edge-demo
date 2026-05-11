@@ -120,7 +120,14 @@ public class MTMDWrapperExample: ObservableObject {
     ///   - modelPath: 模型路径（可选，默认使用文档目录中的模型）
     ///   - mmprojPath: 多模态投影模型路径（可选，默认使用文档目录中的模型）
     ///   - coremlPath: CoreML 模型路径（可选，用于 ANE 加速）
-    public func initialize(modelPath: String? = nil, mmprojPath: String? = nil, coremlPath: String? = nil) async {
+    ///   - nCtx: 上下文长度（可选，nil 表示用 MTMDParams 的默认值 4096）。
+    ///     V4.6 视频路径建议显式传 8192：v46 视频帧 prefill 在 slice=1 下，
+    ///     64 帧 × 64 visual token = 4096 token，4096 ctx 必然溢出 KV。
+    ///     V2.6 / V4.0 维持 4096 以避免在低内存设备上 KV 内存压力过大。
+    public func initialize(modelPath: String? = nil,
+                           mmprojPath: String? = nil,
+                           coremlPath: String? = nil,
+                           nCtx: Int? = nil) async {
         do {
             let documentsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             let defaultModelPath = documentsDir.appendingPathComponent("ggml-model-Q4_0.gguf").path
@@ -146,15 +153,29 @@ public class MTMDWrapperExample: ObservableObject {
             // the new mtmd_context picks it up on init.  Live updates
             // afterwards go through `setImageMaxSliceNums` (no reload).
             let sliceCap = ImageSliceSetting.current
-            let params = MTMDParams(
-                modelPath: finalModelPath,
-                mmprojPath: finalMmprojPath,
-                coremlPath: finalCoremlPath,
-                imageMaxSliceNums: sliceCap
-            )
+            // nCtx 走"显式优先、缺省 fallback 到 MTMDParams 默认"的两段策略。
+            // 调用方（LoadModel）按模型类型决定要不要抬高，避免老模型默认翻倍 KV。
+            let params: MTMDParams = {
+                if let n = nCtx {
+                    return MTMDParams(
+                        modelPath: finalModelPath,
+                        mmprojPath: finalMmprojPath,
+                        coremlPath: finalCoremlPath,
+                        nCtx: n,
+                        imageMaxSliceNums: sliceCap
+                    )
+                } else {
+                    return MTMDParams(
+                        modelPath: finalModelPath,
+                        mmprojPath: finalMmprojPath,
+                        coremlPath: finalCoremlPath,
+                        imageMaxSliceNums: sliceCap
+                    )
+                }
+            }()
             self.params = params
             try await mtmdWrapper.initialize(with: params)
-            print("MTMDWrapperExample: image_max_slice_nums = \(sliceCap)")
+            print("MTMDWrapperExample: n_ctx = \(params.nCtx), image_max_slice_nums = \(sliceCap)")
             print("初始化成功, CoreML: \(finalCoremlPath.isEmpty ? "未启用" : "已启用")")
             self.multiModelLoadingSuccess = true
         } catch {
@@ -265,6 +286,20 @@ public class MTMDWrapperExample: ObservableObject {
         } else {
             print("MTMDWrapperExample: image_max_slice_nums = \(n) persisted; will apply on next init")
         }
+    }
+
+    /// 仅切换运行时 slice cap，不写 UserDefaults。
+    ///
+    /// 视频抽帧路径使用：进入视频处理前切到 1（单 overview，每帧 token 数下降一个量级），
+    /// 处理完再切回用户在设置页里的原值。一旦用 `updateImageMaxSliceNums` 持久化
+    /// 会把视频路径的"临时值"污染到图片路径，体验上是"用了一次视频后图片变模糊"。
+    public func liveSetImageMaxSliceNums(_ n: Int) {
+        guard multiModelLoadingSuccess else {
+            print("MTMDWrapperExample: liveSet 调用时模型未加载，nop (n=\(n))")
+            return
+        }
+        mtmdWrapper.setImageMaxSliceNums(n)
+        print("MTMDWrapperExample: live-only image_max_slice_nums = \(n) (no persist)")
     }
 }
 

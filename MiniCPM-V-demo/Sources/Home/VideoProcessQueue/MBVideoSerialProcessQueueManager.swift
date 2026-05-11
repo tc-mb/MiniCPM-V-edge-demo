@@ -43,8 +43,17 @@ class MBVideoSerialProcessQueueManager: NSObject {
         
         if let imgURL = self.saveImageToCache(image: img, fileName: filename, compressionQuality: 0.5) {
             debugLog("-->> index = \(index), begin.embed.video.frame = \(imgURL.pathComponents.last ?? "")")
+            // 量整帧 prefill 的墙钟耗时（包含 JPEG decode + clip preprocess + ViT
+            // 推理 + KV insert）。配合 NSLog 里 [MTMD_CoreML] predictWith call#N
+            // 的 CoreML 单次耗时，可以判断：
+            //   - frame#0 远大于 frame#1+        → ANE 编译耗时落在首帧（生效）
+            //   - 每帧耗时平稳且偏大（~500ms+）→ ANE 没生效，跑 GPU/CPU 回退
+            //   - frame ms ≈ CoreML ms          → 几乎全部时间在视觉编码上
+            //   - frame ms >> CoreML ms         → KV insert / IO 也占大头
+            let frameStart = Date()
             let ret = await mtmdWrapperExample.addFrameInBackground(imgURL.path)
-            debugLog("-->> index = \(index), end.input.video.frame = \(imgURL.pathComponents.last ?? "")，并且 input 给模型, ret = \(ret)")
+            let frameMs = Int(Date().timeIntervalSince(frameStart) * 1000)
+            debugLog("-->> [video] frame#\(index) prefill 耗时 \(frameMs) ms, ret=\(ret)")
             return ret
         }
         

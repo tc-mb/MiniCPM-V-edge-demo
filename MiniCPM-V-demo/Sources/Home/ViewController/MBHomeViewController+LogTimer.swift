@@ -57,19 +57,14 @@ extension MBHomeViewController {
                         // 更新性能日志
                         
                         if self.totalVideoFrameCount == 0 {
-                            // 视频文件 size 大小计算
+                            // 图片路径：把 totalVideoFrameCount 当 1 用，方便下面进度估算。
                             self.totalVideoFrameCount = 1
                         }
-                        
-                        var size = "0 KB"
-                        if self.outputImageFileSize > 0 {
-                            if self.outputImageFileSize * UInt64(self.totalVideoFrameCount) / 1000 < 1000 {
-                                size = String(format: "%.0f KB", ceil(Double(self.outputImageFileSize * UInt64(self.totalVideoFrameCount)) / 1000.0))
-                            } else {
-                                size = String(format: "%.0f MB", ceil(Double(self.outputImageFileSize * UInt64(self.totalVideoFrameCount)) / 1000.0 / 1000.0))
-                            }
-                        }
-                        
+
+                        // size 直接用源文件字节数（图片是单图大小、视频是 .mov/.mp4 整体大小）。
+                        // 旧 bug：这里曾经 * totalVideoFrameCount，把 10MB 视频显示成 ~640MB。
+                        let size = MBHomeViewController.formatBytesAsKBMB(self.outputImageFileSize)
+
                         latestCell.model?.performLog = "\(Int(self.outputImageView.image?.size.width ?? 0))x\(Int(self.outputImageView.image?.size.height ?? 0)) (\(size))"
                         
                         // 更新图片处理的进度
