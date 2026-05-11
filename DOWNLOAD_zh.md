@@ -16,7 +16,7 @@
 
 | 平台 | 最新版本 | 安装包 | 大小 | 系统要求 | 推荐内存 |
 | --- | --- | --- | --- | --- | --- |
-| 🍎 **iOS / iPadOS** | TestFlight（滚动更新） | — | — | iOS / iPadOS 16+ | ≥ 6 GB |
+| 🍎 **iOS / iPadOS** | [TestFlight（滚动更新）](https://testflight.apple.com/join/yNKyFZwW) | — | — | iOS / iPadOS 16+ | ≥ 6 GB |
 | 🤖 **安卓** | [v1.7](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/android-v1.7) | APK | ~16 MB | 安卓 8.0 (API 26)+ | ≥ 6 GB |
 | 📱 **鸿蒙** | [v1.1](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/harmonyos-v1.1) | HAP | ~29 MB | 鸿蒙 API 12+ | ≥ 6 GB |
 
