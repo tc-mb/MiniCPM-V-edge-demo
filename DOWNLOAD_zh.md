@@ -28,37 +28,50 @@
 
 ---
 
-## Android —— APK（即将放出）
+## Android —— APK
 
-预编译 **APK 暂未发布**。你看到的所有 Android 端 demo 视频和截图，都是直接基于本仓库的源码录制的，行为与现在自行构建出来的版本完全一致。
+**下载地址：** [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) —— 选择最新的 `MiniCPM-V-demo-Android-*.apk`。
 
-公开 APK 仍在打磨中，很快会发布。早期版本可能会有一些瑕疵，我们会持续更新，也非常希望社区能多给我们 **提 issue / 反馈**。
+### 系统要求
 
-在 APK 上线之前，你可以：
+* **64 位 ARM** 架构（`arm64-v8a`）的安卓设备
+* **Android 8.0（API 26）及以上**
+* 推荐内存 ≥ 6 GB
 
-* 直接从源码构建运行 Android demo，详见 [README_zh.md](README_zh.md#2-android-demo) 的 **Android Demo** 章节。
-* 关注 [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases)（或在仓库点 **Watch → Custom → Releases**），首个 APK 发布后会第一时间收到通知。
-* 在 [Issues](https://github.com/tc-mb/MiniCPM-V-edge-demo/issues) 提交任何问题或建议。
+### 安装步骤
+
+1. 在手机上前往 Releases 页面下载最新 `.apk` 安装包。
+2. 若系统提示安全风险，请在 **设置 → 应用 → 安装未知应用** 中允许安装来源。
+3. 打开 **MiniCPM-V Demo**，进入 App 内的 **模型管理** 页面点击 **下载模型** 即可。
 
 ---
 
-## HarmonyOS NEXT —— HAP（即将放出）
+## HarmonyOS NEXT —— HAP
 
-预编译 **HAP 暂未发布**。你看到的所有 HarmonyOS 端 demo 视频和截图同样来自本仓库的源码，与现在自行构建出来的版本完全一致。
+**下载地址：** [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases) —— 选择最新的 `MiniCPM-V-demo-HarmonyOS-*.hap`。
 
-公开 HAP 仍在打磨中，很快会发布。早期版本难免会有一些瑕疵，我们会快速迭代，也非常希望大家能多多 **提 issue**，帮我们尽快定位问题。
+### 系统要求
 
-在 HAP 上线之前，你可以：
+* **HarmonyOS API 12 及以上** 的设备（如 nova 14 活力版 / Mate 60 / Pura 70 等）
+* 64 位 ARM 架构（`arm64-v8a`）
+* 推荐内存 ≥ 6 GB
 
-* 直接从源码构建运行 HarmonyOS demo，详见 [README_zh.md](README_zh.md#3-harmonyos-demo) 的 **HarmonyOS Demo** 章节。
-* 关注 [GitHub Releases](https://github.com/tc-mb/MiniCPM-V-edge-demo/releases)，首个 HAP 发布后会第一时间通知到你。
-* 在 [Issues](https://github.com/tc-mb/MiniCPM-V-edge-demo/issues) 提交任何问题或建议。
+### 安装步骤
+
+1. 在设备上开启 **开发者模式** 与 **USB 调试**。
+2. 连接到已安装 `hdc` 工具的电脑，执行：
+
+   ```bash
+   hdc install MiniCPM-V-demo-HarmonyOS-*.hap
+   ```
+3. 打开 App，进入应用内的 **模型管理** 页面点击 **下载模型** 即可。
+
+> 华为应用市场的上架渠道正在准备中，目前请先使用上方的 HAP 安装包。
 
 ---
 
 ## 注意事项
 
-* 三端 demo 视频 / 截图均直接基于本仓库源码录制；后续放出的预编译 APK / HAP 也将由同一份源码直接打包。
 * 三端 App 在 **首次启动** 时都会下载 GGUF 模型文件（数 GB），建议使用 Wi-Fi 完成首次下载。
 * 当前版本仅用于 **研究 / 预览**，并非正式产品。
-* 预编译 APK / HAP 的早期版本难免会有瑕疵，我们会持续更新。发现问题或有改进建议？欢迎到 [Issues](https://github.com/tc-mb/MiniCPM-V-edge-demo/issues) 提交，或通过 TestFlight（iOS）反馈，我们会尽快跟进。
+* 发现问题或有改进建议？欢迎提交 [Issue](https://github.com/tc-mb/MiniCPM-V-edge-demo/issues)，或通过 TestFlight（iOS）反馈。
