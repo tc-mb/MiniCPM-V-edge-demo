@@ -18,7 +18,7 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS** are listed below. All
 | --- | --- | --- | --- | --- | --- |
 | 🍎 **iOS / iPadOS** | [TestFlight (rolling)](https://testflight.apple.com/join/yNKyFZwW) | — | — | iOS / iPadOS 16+ | ≥ 6 GB |
 | 🤖 **Android** | [v1.7](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/android-v1.7) | APK | ~16 MB | Android 8.0 (API 26)+ | ≥ 6 GB |
-| 📱 **HarmonyOS** | [v1.1](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/harmonyos-v1.1) | HAP | ~29 MB | HarmonyOS API 12+ | ≥ 6 GB |
+| 📱 **HarmonyOS** | [v1.2](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/harmonyos-v1.2) | HAP | ~29 MB | HarmonyOS API 12+ | ≥ 6 GB |
 
 All packages target **64-bit ARM** (`arm64-v8a`).
 
@@ -67,11 +67,11 @@ All packages target **64-bit ARM** (`arm64-v8a`).
 
 ## 📱 HarmonyOS — HAP
 
-**Latest release:** [**v1.1**](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/harmonyos-v1.1) &nbsp;|&nbsp; [Download HAP](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/download/harmonyos-v1.1/MiniCPM-V-demo-HarmonyOS-v1.1.hap) &nbsp;|&nbsp; [All HarmonyOS releases](https://github.com/OpenBMB/MiniCPM-V-Apps/releases?q=tag%3Aharmonyos)
+**Latest release:** [**v1.2**](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/tag/harmonyos-v1.2) &nbsp;|&nbsp; [Download HAP](https://github.com/OpenBMB/MiniCPM-V-Apps/releases/download/harmonyos-v1.2/MiniCPM-V-demo-HarmonyOS-v1.2.hap) &nbsp;|&nbsp; [All HarmonyOS releases](https://github.com/OpenBMB/MiniCPM-V-Apps/releases?q=tag%3Aharmonyos)
 
 | File | Size | MD5 |
 | --- | --- | --- |
-| `MiniCPM-V-demo-HarmonyOS-v1.1.hap` | ~29 MB | `f3824e4b85940fcd8fbfe8f9a566519b` |
+| `MiniCPM-V-demo-HarmonyOS-v1.2.hap` | ~29 MB | `390408e7cfe217a11ffb0b359b9a0807` |
 
 ### Requirements
 
@@ -85,7 +85,7 @@ All packages target **64-bit ARM** (`arm64-v8a`).
 2. Connect to a PC with `hdc` installed, then run:
 
    ```bash
-   hdc install MiniCPM-V-demo-HarmonyOS-v1.1.hap
+   hdc install MiniCPM-V-demo-HarmonyOS-v1.2.hap
    ```
 
 3. Open the installed app and tap **Download** in the in-app **Model Manager** to fetch the model files.
