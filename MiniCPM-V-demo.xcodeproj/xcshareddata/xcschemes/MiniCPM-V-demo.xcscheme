@@ -21,6 +21,20 @@
                ReferencedContainer = "container:MiniCPM-V-demo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "61AA8BF3A14092AEC1EBC31E"
+               BuildableName = "MiniCPM-V-demoUITests.xctest"
+               BlueprintName = "MiniCPM-V-demoUITests"
+               ReferencedContainer = "container:MiniCPM-V-demo.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -29,6 +43,18 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES"
       shouldAutocreateTestPlan = "YES">
+      <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "61AA8BF3A14092AEC1EBC31E"
+               BuildableName = "MiniCPM-V-demoUITests.xctest"
+               BlueprintName = "MiniCPM-V-demoUITests"
+               ReferencedContainer = "container:MiniCPM-V-demo.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
