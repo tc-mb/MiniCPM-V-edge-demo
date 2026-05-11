@@ -12,6 +12,9 @@
 
 **公开链接：** [https://testflight.apple.com/join/yNKyFZwW](https://testflight.apple.com/join/yNKyFZwW)
 
+> **请注意：iOS 版本比 Android / HarmonyOS 更新更慢。**
+> iOS 每次发版都必须先通过 Apple 的 TestFlight 审核才能推送到用户，因此新功能和问题修复在 iOS 上**通常会比 Android APK 和 HarmonyOS HAP 滞后数天到一两周**。如需第一时间体验最新修复，请使用本页下方的 Android 或 HarmonyOS 安装包。
+
 ### 系统要求
 
 * 运行 **iOS / iPadOS 16 及以上** 的 iPhone 或 iPad

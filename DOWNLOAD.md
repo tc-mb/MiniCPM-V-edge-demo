@@ -12,6 +12,9 @@ Pre-built apps for **iOS**, **Android**, and **HarmonyOS NEXT** are listed below
 
 **Public link:** [https://testflight.apple.com/join/yNKyFZwW](https://testflight.apple.com/join/yNKyFZwW)
 
+> **Heads up — iOS ships slower than Android / HarmonyOS.**
+> Every iOS build has to clear Apple's TestFlight review before it reaches users, so new features and bug fixes on iOS typically land **several days to a couple of weeks behind** the Android APK and HarmonyOS HAP releases. If you need the latest fix immediately, please use the Android or HarmonyOS package on this page.
+
 ### Requirements
 
 * iPhone or iPad running **iOS / iPadOS 16 or later**
