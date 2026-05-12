@@ -511,10 +511,11 @@ extension MBV26ModelDetailViewController: UITableViewDelegate {
                 handleModelDownload(modelName: title, downloadAction: { [weak self] in
                     self?.downloadManager.downloadMMProjV26()
                 })
-            case MiniCPMModelConst.mlmodelcZipFileDisplayedName:
-                handleModelDownload(modelName: title, downloadAction: { [weak self] in
-                    self?.downloadManager.downloadMLModelcV26()
-                })
+            // ANE 暂禁用，UI 不展示。恢复时取消注释。
+            // case MiniCPMModelConst.mlmodelcZipFileDisplayedName:
+            //     handleModelDownload(modelName: title, downloadAction: { [weak self] in
+            //         self?.downloadManager.downloadMLModelcV26()
+            //     })
             default:
                 break
             }
@@ -542,8 +543,8 @@ extension MBV26ModelDetailViewController: UITableViewDelegate {
             return downloadManager.getModelV26_Q4_K_M_Status() == "downloaded"
         case MiniCPMModelConst.modelMMProjDisplayedName:
             return downloadManager.getMMProjV26_Status() == "downloaded"
-        case MiniCPMModelConst.mlmodelcZipFileDisplayedName:
-            return downloadManager.getMLModelcV26_Status() == "downloaded"
+        // case MiniCPMModelConst.mlmodelcZipFileDisplayedName:
+        //     return downloadManager.getMLModelcV26_Status() == "downloaded"
         default:
             return false
         }
@@ -572,15 +573,19 @@ extension MBV26ModelDetailViewController {
         multimodalModel.statusString = getInitialStatus(for: downloadManager.getMMProjV26_Status())
         multimodalModel.shouldShowStatusText = true
         dataArray.append(multimodalModel)
-        
-        // ANE
+
+        // ANE/CoreML 模块当前默认禁用：V2.6 的 mmproj 已经能在 ggml/Metal 上独立完成 ViT，
+        // 加上 mtmd_coreml.mm 默认 MLComputeUnitsCPUAndGPU（不走 ANE），下载这一项已无收益。
+        // 恢复入口只需取消注释下面这一段。
+        /*
         let aneModel = MBSettingsModel()
         aneModel.title = MiniCPMModelConst.mlmodelcZipFileDisplayedName
         aneModel.icon = UIImage(systemName: "cpu")
         aneModel.statusString = getInitialStatus(for: downloadManager.getMLModelcV26_Status())
         aneModel.shouldShowStatusText = true
         dataArray.append(aneModel)
-        
+        */
+
         tableView.reloadData()
     }
     
@@ -599,12 +604,12 @@ extension MBV26ModelDetailViewController {
     
     // MARK: - 模型使用相关方法
     
-    /// 检查所有模型是否已下载完成（先按磁盘 reconcile，避免 callback race 卡住）
+    /// 检查所有模型是否已下载完成。ANE/CoreML 包默认禁用（参见 loadTableViewData 注释），不计入。
     private func checkAllModelsDownloaded() -> Bool {
         downloadManager.reconcileStatusFromDisk()
         return downloadManager.getModelV26_Q4_K_M_Status() == "downloaded" &&
-               downloadManager.getMMProjV26_Status()       == "downloaded" &&
-               downloadManager.getMLModelcV26_Status()     == "downloaded"
+               downloadManager.getMMProjV26_Status()       == "downloaded"
+               // && downloadManager.getMLModelcV26_Status() == "downloaded"  // ANE 暂禁用
     }
 
     /// 三态主按钮刷新

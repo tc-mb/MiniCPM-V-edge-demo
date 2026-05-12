@@ -249,21 +249,21 @@ class MBV4ModelDownloadManager: NSObject {
 
     // MARK: - 一键下载（V4.6 同款）
 
-    /// 同时启动 LLM / VPM / ANE 三段下载（互不阻塞），已就绪的子模型自动跳过
+    /// 一键下载：默认只拉 LLM + VPM 两段（ANE/CoreML 包默认禁用，参见 MBV4ModelDetailViewController 注释）。
     func downloadAll() {
         reconcileStatusFromDisk()
-        debugLog("-->> V4 一键下载：同时拉起 LLM + VPM + ANE（已就绪的会自动跳过）")
+        debugLog("-->> V4 一键下载：同时拉起 LLM + VPM（ANE 已默认禁用）")
         downloadModelv4_Q4_K_M()
         downloadMMProjv4()
-        downloadMLModelcv4()
+        // downloadMLModelcv4()  // ANE 暂禁用，恢复时取消注释
     }
 
-    /// 三段文件的综合进度，0..1。按段平均加权（不依赖准确字节数）。
+    /// 综合进度，0..1。ANE 当前不参与，故不计入。
     func overallProgress() -> CGFloat {
         let mainProg   = progress(forKey: "v4_main_model")
         let mmprojProg = progress(forKey: "v4_mmproj_model")
-        let aneProg    = progress(forKey: "v4_ane_module")
-        return (mainProg + mmprojProg + aneProg) / 3.0
+        // let aneProg = progress(forKey: "v4_ane_module")  // ANE 暂禁用
+        return (mainProg + mmprojProg) / 2.0
     }
 
     private func progress(forKey modelKey: String) -> CGFloat {

@@ -376,10 +376,11 @@ extension MBV46ModelDetailViewController: UITableViewDelegate {
             handleModelDownload(modelName: title) { [weak self] in
                 self?.downloadManager.downloadMMProjv46()
             }
-        case MiniCPMModelConst.mlmodelcv46_DisplayedName:
-            handleModelDownload(modelName: title) { [weak self] in
-                self?.downloadManager.downloadMLModelcv46()
-            }
+        // ANE/CoreML 包默认禁用，UI 不展示，理论上走不到这里。保留 case 待恢复时取消注释。
+        // case MiniCPMModelConst.mlmodelcv46_DisplayedName:
+        //     handleModelDownload(modelName: title) { [weak self] in
+        //         self?.downloadManager.downloadMLModelcv46()
+        //     }
         default:
             break
         }
@@ -401,8 +402,8 @@ extension MBV46ModelDetailViewController: UITableViewDelegate {
             return downloadManager.getModelv46_Q4_K_M_Status() == "downloaded"
         case MiniCPMModelConst.modelMMProjv46_DisplayedName:
             return downloadManager.getMMProjv46_Status() == "downloaded"
-        case MiniCPMModelConst.mlmodelcv46_DisplayedName:
-            return downloadManager.getMLModelcv46_Status() == "downloaded"
+        // case MiniCPMModelConst.mlmodelcv46_DisplayedName:
+        //     return downloadManager.getMLModelcv46_Status() == "downloaded"
         default:
             return false
         }
@@ -428,14 +429,20 @@ extension MBV46ModelDetailViewController {
         multimodalModel.statusString = getInitialStatus(for: downloadManager.getMMProjv46_Status())
         multimodalModel.shouldShowStatusText = true
         dataArray.append(multimodalModel)
-        
+
+        // ANE/CoreML 模块当前默认禁用：mtmd_coreml.mm 已切到 MLComputeUnitsCPUAndGPU（走 Metal 不走 ANE），
+        // ggml/Metal 路径可独立完成 ViT+merger，不再要求用户额外下载 ~1 GB 的 mlmodelc 包。
+        // 旧版用户磁盘上残留的 mlmodelc 仍会被 MiniCPMV46CoreMLBootstrap.resolvedCoreMLPathInDocuments() 自动 pick up，
+        // 走 CoreML/Metal 路径（同样不走 ANE）。以后想恢复入口时只需取消注释。
+        /*
         let aneModel = MBSettingsModel()
         aneModel.title = MiniCPMModelConst.mlmodelcv46_DisplayedName
         aneModel.icon = UIImage(systemName: "cpu")
         aneModel.statusString = getInitialStatus(for: downloadManager.getMLModelcv46_Status())
         aneModel.shouldShowStatusText = true
         dataArray.append(aneModel)
-        
+        */
+
         tableView.reloadData()
     }
     
@@ -448,13 +455,13 @@ extension MBV46ModelDetailViewController {
         }
     }
     
-    /// LLM + VPM + ANE 全部就绪才允许使用
+    /// LLM + VPM 就绪即允许使用（ANE/CoreML 包已默认禁用，参见 loadTableViewData 注释）。
     /// 调用前先按磁盘 reconcile，避免 helper.status 因 callback race 卡住与磁盘不一致
     private func checkAllModelsDownloaded() -> Bool {
         downloadManager.reconcileStatusFromDisk()
         return downloadManager.getModelv46_Q4_K_M_Status() == "downloaded" &&
-               downloadManager.getMMProjv46_Status()       == "downloaded" &&
-               downloadManager.getMLModelcv46_Status()     == "downloaded"
+               downloadManager.getMMProjv46_Status()       == "downloaded"
+               // && downloadManager.getMLModelcv46_Status() == "downloaded"  // ANE 暂禁用，恢复时取消注释
     }
 
     /// 三态主按钮刷新
@@ -462,7 +469,7 @@ extension MBV46ModelDetailViewController {
         switch currentButtonState() {
         case .needsDownload:
             useModelButton.isEnabled = true
-            useModelButton.setTitle("一键下载（约 2.5 GB）", for: .normal)
+            useModelButton.setTitle("一键下载（约 1.6 GB）", for: .normal)
             useModelButton.backgroundColor = UIColor.mb_color(with: "#007AFF")
             useModelButton.setTitleColor(.white, for: .normal)
         case .downloading:

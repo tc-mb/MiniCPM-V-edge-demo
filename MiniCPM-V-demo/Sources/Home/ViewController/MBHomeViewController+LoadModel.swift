@@ -18,16 +18,14 @@ extension MBHomeViewController {
         }
         
         // 显示加载 HUD。
-        // 第二行用最朴素的换行文案告诉用户"首次启动 ANE 较慢，请耐心等候"。
-        // 之所以不走 attributedText / Timer 心跳那种花哨方案：在多次切换模型
-        // 反复 reset + init 的场景里，跨 main actor 写 attributedText / 长生命
+        // 第二行是最朴素的多行 UILabel 文案：避免 attributedText / Timer 心跳那种花哨方案。
+        // 在多次切换模型反复 reset + init 的场景里，跨 main actor 写 attributedText / 长生命
         // 周期 Timer 持有 hud 会跟 vc dealloc 路径竞争，触发
         // `Cannot form weak reference to MBHomeViewController` 崩溃 + 白屏。
-        // 简单的多行 UILabel 文案在 vc 完全 attach 之后再被 alpha 动画显示出
-        // 来，没有任何额外引用链，最稳。
+        // 静态多行文案在 vc 完全 attach 之后再被 alpha 动画显示出来，没有任何额外引用链，最稳。
         let hud = MBHUD.showAdded(to: self.view, animated: true)
         hud.mode = .indeterminate
-        hud.label.text = "正在加载多模态模型...\n首次启动 ANE 较慢，请耐心等候"
+        hud.label.text = "正在加载多模态模型...\n首次启动需要解析权重，请稍候"
         
         Task.detached(priority: .userInitiated) {
 
@@ -89,6 +87,9 @@ extension MBHomeViewController {
                     try? whiteImageData?.write(to: URL(fileURLWithPath: whiteImagePath))
                     _ = await self.mtmdWrapperExample?.addImageInBackground(whiteImagePath)
                 } else if selectedModelType == .V46MultiModel {
+                    // V4.6：CoreML mlmodelc 默认不再要求用户下载（详见 MBV46ModelDetailViewController 注释）。
+                    // 这里仍保留 resolvedCoreMLPathInDocuments() —— 老用户磁盘上若残留 mlmodelc，
+                    // 自动 pick up 走 CoreML/Metal；否则返回 nil，C++ 层退到 ggml/Metal 路径。
                     let coremlPath = MiniCPMV46CoreMLBootstrap.resolvedCoreMLPathInDocuments()
                     // V4.6 视频路径专属：64 帧 × slice=1 × 64 visual token = 4096，
                     // 4096 ctx 会被顶死并溢出 KV。8192 给 system prompt / 多轮

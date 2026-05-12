@@ -513,10 +513,11 @@ extension MBV4ModelDetailViewController: UITableViewDelegate {
                 handleModelDownload(modelName: title, downloadAction: { [weak self] in
                     self?.downloadManager.downloadMMProjv4()
                 })
-            case MiniCPMModelConst.mlmodelcv4_ZipFileDisplayedName:
-                handleModelDownload(modelName: title, downloadAction: { [weak self] in
-                    self?.downloadManager.downloadMLModelcv4()
-                })
+            // ANE 暂禁用，UI 不展示，理论上走不到这里。恢复时取消注释。
+            // case MiniCPMModelConst.mlmodelcv4_ZipFileDisplayedName:
+            //     handleModelDownload(modelName: title, downloadAction: { [weak self] in
+            //         self?.downloadManager.downloadMLModelcv4()
+            //     })
             default:
                 break
             }
@@ -544,8 +545,8 @@ extension MBV4ModelDetailViewController: UITableViewDelegate {
             return downloadManager.getModelv4_Q4_K_M_Status() == "downloaded"
         case MiniCPMModelConst.modelMMProjv4_DisplayedName:
             return downloadManager.getMMProjv4_Status() == "downloaded"
-        case MiniCPMModelConst.mlmodelcv4_ZipFileDisplayedName:
-            return downloadManager.getMLModelcv4_Status() == "downloaded"
+        // case MiniCPMModelConst.mlmodelcv4_ZipFileDisplayedName:
+        //     return downloadManager.getMLModelcv4_Status() == "downloaded"
         default:
             return false
         }
@@ -574,15 +575,20 @@ extension MBV4ModelDetailViewController {
         multimodalModel.statusString = getInitialStatus(for: downloadManager.getMMProjv4_Status())
         multimodalModel.shouldShowStatusText = true
         dataArray.append(multimodalModel)
-        
-        // ANE
+
+        // ANE/CoreML 模块当前默认禁用：mtmd_coreml.mm 已切到 MLComputeUnitsCPUAndGPU（走 Metal 不走 ANE）；
+        // V4.0 ggml/Metal 路径可独立加载 mmproj，不再要求用户下载 ~1 GB 的 mlmodelc。
+        // 老用户磁盘上若残留 coreml_minicpmv40_vit_f16.mlmodelc，MTMDWrapperExample 仍会自动 pick up 走 CoreML/Metal。
+        // 恢复入口只需取消注释下面这一段。
+        /*
         let aneModel = MBSettingsModel()
         aneModel.title = MiniCPMModelConst.mlmodelcv4_ZipFileDisplayedName
         aneModel.icon = UIImage(systemName: "cpu")
         aneModel.statusString = getInitialStatus(for: downloadManager.getMLModelcv4_Status())
         aneModel.shouldShowStatusText = true
         dataArray.append(aneModel)
-        
+        */
+
         tableView.reloadData()
     }
     
@@ -601,12 +607,12 @@ extension MBV4ModelDetailViewController {
     
     // MARK: - 模型使用相关方法
     
-    /// 检查所有模型是否已下载完成（先按磁盘 reconcile，避免 callback race 卡住）
+    /// 检查所有模型是否已下载完成。ANE/CoreML 包默认禁用（参见 loadTableViewData 注释），不计入。
     private func checkAllModelsDownloaded() -> Bool {
         downloadManager.reconcileStatusFromDisk()
         return downloadManager.getModelv4_Q4_K_M_Status() == "downloaded" &&
-               downloadManager.getMMProjv4_Status()       == "downloaded" &&
-               downloadManager.getMLModelcv4_Status()     == "downloaded"
+               downloadManager.getMMProjv4_Status()       == "downloaded"
+               // && downloadManager.getMLModelcv4_Status() == "downloaded"  // ANE 暂禁用
     }
 
     /// 三态主按钮刷新

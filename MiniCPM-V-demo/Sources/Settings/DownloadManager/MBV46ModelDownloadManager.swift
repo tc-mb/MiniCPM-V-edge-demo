@@ -297,31 +297,33 @@ class MBV46ModelDownloadManager: NSObject {
     
     // MARK: - 一键下载
 
-    /// 同时启动 LLM / VPM / ANE 三段下载（互不阻塞）
-    /// 已经在磁盘上的子模型会因 status == "downloaded" 自动跳过
+    /// 一键下载：默认只拉 LLM + VPM 两段。
+    /// ANE/CoreML 包当前默认禁用（mtmd_coreml.mm 已切到 MLComputeUnitsCPUAndGPU，
+    /// 走 Metal 不走 ANE；ggml/Metal 路径可独立完成 ViT+merger）。
+    /// 想恢复时取消注释 `downloadMLModelcv46()` 即可。
     func downloadAll() {
         reconcileStatusFromDisk()
-        debugLog("-->> V4.6 一键下载：同时拉起 LLM + VPM + ANE（已就绪的会自动跳过）")
+        debugLog("-->> V4.6 一键下载：同时拉起 LLM + VPM（ANE 已默认禁用）")
         downloadModelv46_Q4_K_M()
         downloadMMProjv46()
-        downloadMLModelcv46()
+        // downloadMLModelcv46()  // ANE 暂禁用，恢复时取消注释
     }
 
-    /// 三段文件的综合进度（按预估字节加权），0..1
+    /// 综合进度（按预估字节加权），0..1。ANE 当前不参与下载，故不计入进度。
     func overallProgress() -> CGFloat {
         // 预估字节数（与服务器 Content-Length 一致）
         let llmBytes: Int64    = 529_100_256
         let mmprojBytes: Int64 = 1_097_457_216
-        let aneBytes: Int64    = 1_030_316_868
-        let total = llmBytes + mmprojBytes + aneBytes
+        // let aneBytes: Int64 = 1_030_316_868  // ANE 暂禁用，恢复时取消注释并加回 total / weighted
+        let total = llmBytes + mmprojBytes
 
         let llmProg    = progress(for: "v46_main_model",  downloadedWhenDone: llmBytes)
         let mmprojProg = progress(for: "v46_mmproj_model", downloadedWhenDone: mmprojBytes)
-        let aneProg    = progress(for: "v46_ane_module",   downloadedWhenDone: aneBytes)
+        // let aneProg = progress(for: "v46_ane_module", downloadedWhenDone: aneBytes)
 
         let weighted = llmProg * CGFloat(llmBytes)
                      + mmprojProg * CGFloat(mmprojBytes)
-                     + aneProg * CGFloat(aneBytes)
+                     // + aneProg * CGFloat(aneBytes)
         return weighted / CGFloat(total)
     }
 
