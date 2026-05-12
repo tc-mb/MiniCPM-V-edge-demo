@@ -57,9 +57,21 @@ extension MBHomeViewController {
                 if let imgPath = await self.outputImageURL?.path {
                     do {
                         if let example = await self.mtmdWrapperExample {
-                            try await example.addImageInBackgroundThrowing(imgPath)
-                            status = .succeeded
-                            print("[UI]addImage: \(imgPath) ok")
+                            // 模型尚未加载完成就 prefill，底层会抛
+                            // MTMDError.contextNotInitialized，UI 上就是难看的
+                            // "上下文未初始化，请先调用 initialize…"。这里和视频
+                            // 路径 (MBHomeViewController+CaptureVideo.swift:119)
+                            // 对齐，先做一次状态 gating，给用户一个明确可读的
+                            // "模型尚未加载完成"提示，避免误以为 App 出 bug。
+                            let modelReady = await example.multiModelLoadingSuccess
+                            if modelReady {
+                                try await example.addImageInBackgroundThrowing(imgPath)
+                                status = .succeeded
+                                print("[UI]addImage: \(imgPath) ok")
+                            } else {
+                                status = .failed("模型尚未加载完成，请稍候")
+                                print("[UI]addImage skip: model not loaded yet")
+                            }
                         } else {
                             status = .failed("MTMD wrapper not ready")
                         }

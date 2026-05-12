@@ -16,6 +16,15 @@ extension MBHomeViewController {
     /// 多模态模型的处理逻辑
     func processImageAndTextMixModeSendLogic() async {
 
+        // 模型还没加载完成就允许发送，addTextInBackground 会在底层抛
+        // MTMDError.contextNotInitialized，但 Bool 版 wrapper 会把错误吞掉，
+        // UI 上的症状是"用户消息发出去了、llm 没回复"，看起来像 App 卡死。
+        // 这里和图片 / 视频路径对齐做一次状态 gating，给一个明确 toast。
+        if self.mtmdWrapperExample?.multiModelLoadingSuccess != true {
+            self.showErrorTips("模型尚未加载完成，请稍候再发送。")
+            return
+        }
+
         // 如果有录像的在处理中的视频帧，也要等
         if MBLiveCaptureVideoFrameManager.shared.capturedImageArray.count != 0 {
             self.showErrorTips("图片预处理中，请稍等再点击发送。")
