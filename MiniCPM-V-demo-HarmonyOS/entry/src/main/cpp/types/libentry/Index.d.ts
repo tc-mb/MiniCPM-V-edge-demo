@@ -13,6 +13,11 @@ export const load: (modelPath: string) => number;
 // slider; defaults to 9 (MiniCPM-V upper bound, best detail) on first
 // launch.  Drag the slider down to 1 for single-overview / fastest.
 export const loadMmproj: (mmprojPath: string, imageMaxSliceNums: number) => number;
+// Returns the MiniCPM-V family version of the currently loaded mmproj
+// (0 = nothing loaded, 46 / 460 / 461 = MiniCPM-V-4.6).  Used by the
+// ArkTS layer to gate the video-understanding feature on V-4.6 only,
+// matching the iOS demo.
+export const getMinicpmvVersion: () => number;
 // Live override of the slice cap.  No mmproj reload required - takes
 // effect from the next image encode onwards.
 export const setImageMaxSliceNums: (n: number) => void;

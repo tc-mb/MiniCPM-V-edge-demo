@@ -52,6 +52,12 @@ export class ChatMessageList implements IDataSource {
     for (const l of this.listeners) l.onDataChange(index);
   }
 
+  removeAt(index: number): void {
+    if (index < 0 || index >= this.items.length) return;
+    this.items.splice(index, 1);
+    for (const l of this.listeners) l.onDataDelete(index);
+  }
+
   indexOfId(id: number): number {
     for (let i = 0; i < this.items.length; i++) {
       if (this.items[i].id === id) return i;

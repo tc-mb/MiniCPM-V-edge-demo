@@ -25,12 +25,18 @@ static std::string join(const std::vector<T> &values, const std::string &delim) 
 }
 
 // Inference parameters mirror the iOS demo defaults (MTMDParams.swift / mtmd-ios.cpp):
-//   nThreads=4, nCtx=4096, nBatch=2048, temperature=0.5, top_k=100, top_p=0.8,
-//   penalty_repeat=1.05, nPredict=100. Keeping Android in lockstep avoids
-//   per-platform divergence in generation quality and prefill latency.
+//   nThreads=4, nCtx=4096 (8192 for MiniCPM-V-4.6 to fit video frames),
+//   nBatch=2048, temperature=0.7, top_k=0, top_p=1.0, penalty_repeat=1.0,
+//   nPredict=100. Keeping Android in lockstep avoids per-platform
+//   divergence in generation quality and prefill latency.
 constexpr int   N_THREADS               = 4;
 
 constexpr int   DEFAULT_CONTEXT_SIZE    = 4096;
+// MiniCPM-V-4.6 video understanding feeds up to 64 frames * ~64 visual
+// tokens each into the KV cache; 4096 is not enough.  iOS demo
+// (MBHomeViewController+LoadModel.swift) bumps n_ctx to 8192 only on
+// V-4.6 load so older / non-vision models keep the cheaper 4096 budget.
+constexpr int   V46_CONTEXT_SIZE        = 8192;
 constexpr int   OVERFLOW_HEADROOM       = 4;
 constexpr int   BATCH_SIZE              = 2048;
 // Aligned with the model's generation_config.json (do_sample=true,
@@ -62,6 +68,12 @@ static int                                g_minicpmv_version = 0;
 // persisted preference, so this only matters for the very first
 // setImageMaxSliceNumsNative call before mmproj is loaded.
 static int                                g_image_max_slice_nums = 9;
+
+// Effective n_ctx used to create g_context.  Set by prepare(); reads by
+// the few stay-under-context guards scattered through this file.  Kept
+// as a global rather than a llama_n_ctx() call so we don't depend on
+// llama-side defaults when llama_context_default_params changes.
+static int                                g_n_ctx = DEFAULT_CONTEXT_SIZE;
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -160,6 +172,16 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_loadMmproj(JNIEnv *env, jobject,
     return 0;
 }
 
+// Returns the MiniCPM-V family version of the currently loaded mmproj
+// (0 if no mmproj is loaded).  Used by the Kotlin layer to decide
+// whether the video-understanding path is available (only V-4.6:
+// 46 / 460 / 461).  Mirrored on iOS via mtmd_get_minicpmv_version.
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_example_minicpm_1v_1demo_LlamaEngine_getMinicpmvVersionNative(JNIEnv * /*env*/, jobject) {
+    return (jint) g_minicpmv_version;
+}
+
 // Live update of the per-image slice cap.  Doesn't require a mmproj
 // reload because clip's slicing decision is made at encode time and reads
 // hparams.custom_image_max_slice_nums on each call.
@@ -222,9 +244,20 @@ static common_sampler *new_sampler(float temp) {
 extern "C"
 JNIEXPORT jint JNICALL
 Java_com_example_minicpm_1v_1demo_LlamaEngine_prepare(JNIEnv * /*env*/, jobject /*unused*/) {
-    auto *context = init_context(g_model);
+    // MiniCPM-V-4.6 video understanding (up to 64 frames per turn) needs
+    // a larger KV budget than the 4096 default; everything else stays at
+    // 4096 to keep memory pressure low on older / non-vision models.
+    // Matches the iOS demo's MTMDParams.nCtx = 8192 on V46MultiModel.
+    const bool is_v46 = (g_minicpmv_version == 46) ||
+                        (g_minicpmv_version == 460) ||
+                        (g_minicpmv_version == 461);
+    const int  n_ctx  = is_v46 ? V46_CONTEXT_SIZE : DEFAULT_CONTEXT_SIZE;
+    LOGi("%s: minicpmv_version=%d -> n_ctx=%d", __func__, g_minicpmv_version, n_ctx);
+
+    auto *context = init_context(g_model, n_ctx);
     if (!context) { return 1; }
     g_context = context;
+    g_n_ctx = n_ctx;
     g_batch = llama_batch_init(BATCH_SIZE, 0, 1);
     g_chat_templates = common_chat_templates_init(g_model, "");
     g_sampler = new_sampler(DEFAULT_SAMPLER_TEMP);
@@ -325,7 +358,7 @@ static int decode_tokens_in_batches(
         common_batch_clear(batch);
         LOGv("%s: Preparing a batch size of %d starting at: %d", __func__, cur_batch_size, i);
 
-        if (start_pos + i + cur_batch_size >= DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM) {
+        if (start_pos + i + cur_batch_size >= g_n_ctx - OVERFLOW_HEADROOM) {
             LOGw("%s: Current batch won't fit into context! Shifting...", __func__);
             shift_context();
         }
@@ -398,7 +431,7 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processSystemPrompt(
             LOGv("token: `%s`\t -> `%d`", common_token_to_piece(g_context, id).c_str(), id);
         }
 
-        const int max_batch_size = DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM;
+        const int max_batch_size = g_n_ctx - OVERFLOW_HEADROOM;
         if ((int) system_tokens.size() > max_batch_size) {
             LOGe("%s: System prompt too long for context! %d tokens, max: %d",
                  __func__, (int) system_tokens.size(), max_batch_size);
@@ -605,7 +638,7 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_processUserPrompt(
         }
 
         const int user_prompt_size = (int) user_tokens.size();
-        const int max_batch_size = DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM;
+        const int max_batch_size = g_n_ctx - OVERFLOW_HEADROOM;
         if (user_prompt_size > max_batch_size) {
             const int skipped_tokens = user_prompt_size - max_batch_size;
             user_tokens.resize(max_batch_size);
@@ -661,7 +694,7 @@ Java_com_example_minicpm_1v_1demo_LlamaEngine_generateNextToken(
         JNIEnv *env,
         jobject /*unused*/
 ) {
-    if (current_position >= DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM) {
+    if (current_position >= g_n_ctx - OVERFLOW_HEADROOM) {
         LOGw("%s: Context full! Shifting...", __func__);
         shift_context();
     }

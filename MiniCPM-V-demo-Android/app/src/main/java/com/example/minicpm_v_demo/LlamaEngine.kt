@@ -538,6 +538,9 @@ class LlamaEngine private constructor(
     // setImageMaxSliceNumsNative to avoid the name collision with the
     // public suspend wrapper above.
     private external fun setImageMaxSliceNumsNative(n: Int)
+    // 0 if no mmproj is loaded.  46 / 460 / 461 = MiniCPM-V-4.6 family.
+    // Used by [isVideoUnderstandingSupported] to gate the video path.
+    private external fun getMinicpmvVersionNative(): Int
     private external fun prepare(): Int
     private external fun systemInfo(): String
     private external fun processSystemPrompt(systemPrompt: String): Int
@@ -682,6 +685,87 @@ class LlamaEngine private constructor(
             Log.i(TAG, "Image prefilled!")
             _state.value = LlamaState.ModelReady
         }
+
+    /**
+     * True iff the currently loaded mmproj advertises a MiniCPM-V-4.6
+     * family clip (46 / 460 / 461).  Earlier models share the same image
+     * code path but the iOS demo also restricts video understanding to
+     * V-4.6 because the perceiver token count + extended `n_ctx=8192`
+     * combine to make multi-frame prefill cheap enough to be usable.
+     * The Android backend mirrors that gate by reading
+     * mtmd_get_minicpmv_version() back through getMinicpmvVersionNative.
+     */
+    val isVideoUnderstandingSupported: Boolean
+        get() {
+            if (!_mmprojLoaded) return false
+            val v = try { getMinicpmvVersionNative() } catch (_: Throwable) { 0 }
+            return v == 46 || v == 460 || v == 461
+        }
+
+    /**
+     * Prefills a sequence of video frames into the model.  Iterates over
+     * [frames] and feeds each one through the same native path as
+     * [prefillImage] (which is exactly what iOS does via repeated
+     * `mtmd_ios_prefill_frame`: the C++ implementation of `prefill_frame`
+     * and `prefill_image` in `mtmd-ios.cpp` are byte-for-byte identical
+     * apart from the error-log prefix).
+     *
+     * Side effects to match iOS [MBHomeViewController+CaptureVideo]:
+     *  - Slice cap is temporarily forced to 1 for the duration of the
+     *    video so the per-frame ViT cost stays manageable; the user's
+     *    chat-page slider value is restored on exit (also on failure).
+     *    The persisted SharedPreference is NOT touched - the slider
+     *    keeps showing the user's chosen value.
+     *  - State is parked in [LlamaState.PrefillingImage] across all
+     *    frames so the UI shows a single "prefilling" badge rather
+     *    than flickering between frames.
+     *
+     * @param onProgress invoked on this engine's serial dispatcher
+     * after each successfully-prefilled frame.  Caller should
+     * `withContext(Dispatchers.Main)` before touching UI.
+     */
+    suspend fun prefillVideoFrames(
+        frames: List<ByteArray>,
+        onProgress: suspend (current: Int, total: Int) -> Unit = { _, _ -> }
+    ) = withContext(llamaDispatcher) {
+        check(_mmprojLoaded) { "Vision model not loaded!" }
+        check(isVideoUnderstandingSupported) {
+            "Video understanding only supported on MiniCPM-V-4.6 (current version=" +
+                "${getMinicpmvVersionNative()})"
+        }
+        check(_state.value is LlamaState.ModelReady) {
+            "Cannot prefill video in ${_state.value.javaClass.simpleName}!"
+        }
+        require(frames.isNotEmpty()) { "No frames to prefill" }
+
+        val savedSliceCap = getImageMaxSliceNums(context)
+        val needSliceOverride = savedSliceCap > 1
+
+        Log.i(TAG, "Prefilling ${frames.size} video frames (savedSlice=$savedSliceCap, override=$needSliceOverride)")
+        _state.value = LlamaState.PrefillingImage
+        try {
+            if (needSliceOverride) {
+                Log.i(TAG, "Temporarily forcing image_max_slice_nums=1 for video frames")
+                setImageMaxSliceNumsNative(1)
+            }
+            for ((idx, frame) in frames.withIndex()) {
+                val rc = prefillImage(frame, frame.size)
+                if (rc != 0) {
+                    throw RuntimeException(
+                        "Failed to prefill video frame ${idx + 1}/${frames.size} (code: $rc)"
+                    )
+                }
+                onProgress(idx + 1, frames.size)
+            }
+            Log.i(TAG, "Video frames prefilled successfully")
+        } finally {
+            if (needSliceOverride) {
+                Log.i(TAG, "Restoring image_max_slice_nums=$savedSliceCap after video")
+                setImageMaxSliceNumsNative(savedSliceCap)
+            }
+            _state.value = LlamaState.ModelReady
+        }
+    }
 
     suspend fun clearContext() =
         withContext(llamaDispatcher) {

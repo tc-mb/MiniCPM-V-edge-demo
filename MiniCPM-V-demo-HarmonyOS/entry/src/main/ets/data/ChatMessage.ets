@@ -23,6 +23,10 @@ export class ChatMessage {
   imagePixelMap: image.PixelMap | null;
   imageInfo: string | null;
   isPrefilling: boolean;
+  // When true, [imagePixelMap] is the first frame of a video clip and
+  // the cell overlays a play-arrow badge.  Mirrors Android demo's
+  // ChatMessage.UserMessage.isVideo.
+  isVideo: boolean;
 
   // ai-specific
   isGenerating: boolean;
@@ -34,6 +38,7 @@ export class ChatMessage {
     this.imagePixelMap = null;
     this.imageInfo = null;
     this.isPrefilling = false;
+    this.isVideo = false;
     this.isGenerating = false;
   }
 
@@ -44,12 +49,14 @@ export class ChatMessage {
   static user(id: number, text: string,
               pixelMap: image.PixelMap | null = null,
               imageInfo: string | null = null,
-              isPrefilling: boolean = false): ChatMessage {
+              isPrefilling: boolean = false,
+              isVideo: boolean = false): ChatMessage {
     const m = new ChatMessage(id, 'user');
     m.text = text;
     m.imagePixelMap = pixelMap;
     m.imageInfo = imageInfo;
     m.isPrefilling = isPrefilling;
+    m.isVideo = isVideo;
     return m;
   }
 

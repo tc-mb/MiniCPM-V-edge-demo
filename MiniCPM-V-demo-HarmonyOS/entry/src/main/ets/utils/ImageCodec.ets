@@ -39,12 +39,38 @@ export interface PickedImage {
   pixelMap: image.PixelMap;
 }
 
-// Open the system photo picker, let the user pick exactly one image,
-// then decode + re-encode as PNG. Returns null if the user cancels.
-export async function pickAndDecodeImage(): Promise<PickedImage | null> {
+/** Result of [pickImageOrVideoUri]: a URI plus whether it looks like a video. */
+export interface PickedMediaUri {
+  uri: string;
+  isVideo: boolean;
+}
+
+const VIDEO_EXT_RE = /\.(mp4|mov|mkv|m4v|webm|3gp|3gpp|avi|wmv|flv|ts|m3u8)(\?|$)/i;
+
+/**
+ * Returns true if [uri] looks like a video by extension.  Used by the
+ * chat-page entry point to dispatch the picker result to the
+ * image-decode path or the video-extract path.  HarmonyOS picker URIs
+ * include the original filename so the extension is reliable for the
+ * built-in gallery.
+ */
+export function isVideoMediaUri(uri: string): boolean {
+  return VIDEO_EXT_RE.test(uri);
+}
+
+/**
+ * Opens the system photo picker filtered to BOTH images and videos.
+ * The chat-page caller then dispatches to either [decodeImageFromUri]
+ * or [VideoFrameExtractor.extractFromUri] based on the URI extension.
+ * Returns null if the user cancels.
+ */
+export async function pickImageOrVideoUri(): Promise<PickedMediaUri | null> {
   const photoPicker = new picker.PhotoViewPicker();
   const opts = new picker.PhotoSelectOptions();
-  opts.MIMEType = picker.PhotoViewMIMETypes.IMAGE_TYPE;
+  // IMAGE_VIDEO_TYPE shows both photos and videos in a single picker -
+  // matches the iOS demo's HXPhotoPicker which lets the user pick
+  // either type with one tap.
+  opts.MIMEType = picker.PhotoViewMIMETypes.IMAGE_VIDEO_TYPE;
   opts.maxSelectNumber = 1;
 
   let uris: string[];
@@ -55,11 +81,16 @@ export async function pickAndDecodeImage(): Promise<PickedImage | null> {
     hilog.warn(DOMAIN, TAG, 'photoPicker cancelled or failed: %{public}s', `${e}`);
     return null;
   }
-  if (!uris || uris.length === 0) {
-    return null;
-  }
-  const uri = uris[0];
+  if (!uris || uris.length === 0) return null;
+  return { uri: uris[0], isVideo: isVideoMediaUri(uris[0]) };
+}
 
+/**
+ * Decode + downscale + PNG-encode a single image from [uri].  Behaves
+ * exactly like the original [pickAndDecodeImage] body, but accepts a
+ * caller-provided URI so the picker step can be shared with video.
+ */
+export async function decodeImageFromUri(uri: string): Promise<PickedImage> {
   const file = fs.openSync(uri, fs.OpenMode.READ_ONLY);
   try {
     const src = image.createImageSource(file.fd);
@@ -123,4 +154,27 @@ export async function pickAndDecodeImage(): Promise<PickedImage | null> {
 export function imageInfoString(img: PickedImage): string {
   const sizeKb = Math.floor(img.pngBytes.byteLength / 1024);
   return `${img.width} x ${img.height} (${sizeKb} KB)`;
+}
+
+/**
+ * Backwards-compatible image-only picker, kept for the debug-image
+ * code path.  New media flow uses [pickImageOrVideoUri] +
+ * [decodeImageFromUri] / [VideoFrameExtractor.extractFromUri].
+ */
+export async function pickAndDecodeImage(): Promise<PickedImage | null> {
+  const photoPicker = new picker.PhotoViewPicker();
+  const opts = new picker.PhotoSelectOptions();
+  opts.MIMEType = picker.PhotoViewMIMETypes.IMAGE_TYPE;
+  opts.maxSelectNumber = 1;
+
+  let uris: string[];
+  try {
+    const res = await photoPicker.select(opts);
+    uris = res.photoUris;
+  } catch (e) {
+    hilog.warn(DOMAIN, TAG, 'photoPicker cancelled or failed: %{public}s', `${e}`);
+    return null;
+  }
+  if (!uris || uris.length === 0) return null;
+  return await decodeImageFromUri(uris[0]);
 }

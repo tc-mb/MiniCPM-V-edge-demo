@@ -126,7 +126,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupClickListeners() {
-        btnImage.setOnClickListener { getImage.launch(arrayOf("image/*")) }
+        // Pick image OR video.  iOS demo's HXPhotoPicker exposes both
+        // photo and video in a single picker; on Android we ask SAF
+        // for either MIME, so the user gets the same "pick anything
+        // viewable" affordance with no extra "video" button.  Video is
+        // only fed to the model if the loaded model is V-4.6 (gated in
+        // [handleSelectedMedia] / [LlamaEngine.isVideoUnderstandingSupported]).
+        btnImage.setOnClickListener { getMedia.launch(arrayOf("image/*", "video/*")) }
         btnSend.setOnClickListener { handleUserInput() }
         btnClearChat.setOnClickListener { showClearChatDialog() }
         btnModelManager.setOnClickListener {
@@ -356,18 +362,28 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private val getImage = registerForActivityResult(
+    private val getMedia = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
-        uri?.let { handleSelectedImage(it) }
+        uri?.let { handleSelectedMedia(it) }
     }
 
-    private fun handleSelectedImage(uri: Uri) {
+    private fun handleSelectedMedia(uri: Uri) {
         if (!isModelReady) {
             Toast.makeText(this, "请先加载模型", Toast.LENGTH_SHORT).show()
             return
         }
+        val mime = contentResolver.getType(uri).orEmpty()
+        when {
+            mime.startsWith("video/") -> handleSelectedVideo(uri)
+            mime.startsWith("image/") || mime.isEmpty() -> handleSelectedImage(uri)
+            else -> {
+                Toast.makeText(this, "不支持的文件类型: $mime", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
+    private fun handleSelectedImage(uri: Uri) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
                 val imageData = contentResolver.openInputStream(uri)?.use { input ->
@@ -418,6 +434,90 @@ class MainActivity : AppCompatActivity() {
                 Log.e(TAG, "Error processing image", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@MainActivity, "处理图片失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    /**
+     * Video-understanding pipeline (iOS-equivalent
+     * MBHomeViewController+CaptureVideo.processVideoFrame):
+     * extract up to 64 uniformly-sampled frames off the IO dispatcher,
+     * append a single chat cell with the first frame as thumbnail,
+     * then hand the frames to [LlamaEngine.prefillVideoFrames] which
+     * loops `prefillImage(...)` under a temporary slice=1 cap.
+     *
+     * Gated to MiniCPM-V-4.6 because that's where iOS enables the
+     * feature and where the native nCtx bump to 8192 takes effect
+     * (see prepare() in llama_jni.cpp).
+     */
+    private fun handleSelectedVideo(uri: Uri) {
+        if (!engine.isVideoUnderstandingSupported) {
+            Toast.makeText(this,
+                "视频理解仅在 MiniCPM-V-4.6 上可用，请前往“模型管理”切换模型",
+                Toast.LENGTH_LONG).show()
+            return
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val msgId = messageIdCounter++
+            val startNs = System.nanoTime()
+            try {
+                val extracted = VideoFrameExtractor.extract(applicationContext, uri)
+                val info = VideoFrameExtractor.formatVideoInfo(extracted)
+                Log.i(TAG, "Video info: $info")
+
+                withContext(Dispatchers.Main) {
+                    val videoMessage = ChatMessage.UserMessage(
+                        id = msgId,
+                        text = "",
+                        imageBitmap = extracted.thumbnail,
+                        imageInfo = info,
+                        isPrefilling = true,
+                        isVideo = true
+                    )
+                    messages.add(videoMessage)
+                    chatAdapter.submitList(messages.toList()) {
+                        scrollToBottom()
+                    }
+                }
+
+                engine.prefillVideoFrames(extracted.frames) { current, total ->
+                    withContext(Dispatchers.Main) {
+                        val index = messages.indexOfFirst { it.id == msgId }
+                        if (index >= 0) {
+                            val cur = messages[index] as ChatMessage.UserMessage
+                            messages[index] = cur.copy(
+                                imageInfo = "$info · 处理中 $current/$total"
+                            )
+                            chatAdapter.submitList(messages.toList())
+                        }
+                    }
+                }
+
+                isImagePrefilled = true
+
+                val elapsedMs = (System.nanoTime() - startNs) / 1_000_000
+                withContext(Dispatchers.Main) {
+                    val index = messages.indexOfFirst { it.id == msgId }
+                    if (index >= 0) {
+                        val cur = messages[index] as ChatMessage.UserMessage
+                        messages[index] = cur.copy(
+                            imageInfo = "$info · 预处理 ${elapsedMs / 1000.0}s",
+                            isPrefilling = false
+                        )
+                        chatAdapter.submitList(messages.toList())
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error processing video", e)
+                withContext(Dispatchers.Main) {
+                    val index = messages.indexOfFirst { it.id == msgId }
+                    if (index >= 0) {
+                        messages.removeAt(index)
+                        chatAdapter.submitList(messages.toList())
+                    }
+                    Toast.makeText(this@MainActivity, "处理视频失败: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }

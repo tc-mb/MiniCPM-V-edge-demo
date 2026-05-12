@@ -86,6 +86,12 @@ export interface TokenStream {
   next(): Promise<TokenChunk>;
 }
 
+// Per-frame progress callback for prefillVideoFrames.
+// `current` is 1..total inclusive once the corresponding frame has been
+// successfully prefilled into the KV cache; intended for the chat-cell
+// progress line ("处理中 5/64").
+export type VideoFrameProgressListener = (current: number, total: number) => void;
+
 export class LlamaEngine {
   private static instance: LlamaEngine | null = null;
 
@@ -307,6 +313,100 @@ export class LlamaEngine {
       }
       hilog.info(DOMAIN, TAG, 'Image prefilled!');
       this.setState(LlamaState.ModelReady);
+    });
+  }
+
+  /**
+   * True iff the currently loaded mmproj advertises a MiniCPM-V-4.6
+   * family clip (46 / 460 / 461).  Earlier models share the same image
+   * code path but the iOS demo also restricts video understanding to
+   * V-4.6 because the perceiver token count + extended `n_ctx=8192`
+   * (see prepare() in llama_napi.cpp) combine to make multi-frame
+   * prefill cheap enough to be usable.  Mirrored on Android via
+   * LlamaEngine.isVideoUnderstandingSupported.
+   */
+  isVideoUnderstandingSupported(): boolean {
+    if (!this.mmprojLoaded) return false;
+    try {
+      const v = nativeEngine.getMinicpmvVersion();
+      return v === 46 || v === 460 || v === 461;
+    } catch (e) {
+      hilog.warn(DOMAIN, TAG, 'getMinicpmvVersion failed: %{public}s', `${e}`);
+      return false;
+    }
+  }
+
+  /**
+   * Prefills a sequence of video frames into the model.  Iterates over
+   * [frames] and feeds each one through the same NAPI path as
+   * [prefillImage] (which is exactly what iOS does via repeated
+   * `mtmd_ios_prefill_frame`: the C++ implementation of `prefill_frame`
+   * and `prefill_image` in `mtmd-ios.cpp` are byte-for-byte identical
+   * apart from the error-log prefix).
+   *
+   * Side effects to match iOS [MBHomeViewController+CaptureVideo]:
+   *  - Slice cap is temporarily forced to 1 for the duration of the
+   *    video so the per-frame ViT cost stays manageable; the user's
+   *    chat-page slider value is restored on exit (also on failure).
+   *    The persisted preference is NOT touched - the slider keeps
+   *    showing the user's chosen value.
+   *  - State is parked in [LlamaState.PrefillingImage] across all
+   *    frames so the UI shows a single "prefilling" badge rather
+   *    than flickering between frames.
+   *
+   * The whole video is executed inside a single [serial] block so the
+   * 64-frame loop counts as one queue slot, mirroring the Android
+   * implementation in LlamaEngine.kt::prefillVideoFrames.
+   */
+  prefillVideoFrames(
+    frames: ArrayBuffer[],
+    onProgress: VideoFrameProgressListener = (): void => {},
+  ): Promise<void> {
+    return this.serial(async () => {
+      if (!this.mmprojLoaded) {
+        throw new Error('Vision model not loaded');
+      }
+      if (!this.isVideoUnderstandingSupported()) {
+        throw new Error(
+          `Video understanding only supported on MiniCPM-V-4.6 ` +
+          `(current version=${nativeEngine.getMinicpmvVersion()})`);
+      }
+      if (this.state.name !== 'ModelReady') {
+        throw new Error(`Cannot prefill video in state ${this.state.name}`);
+      }
+      if (frames.length === 0) {
+        throw new Error('No frames to prefill');
+      }
+
+      const savedSliceCap = await LlamaEngine.getImageMaxSliceNums(this.context);
+      const needOverride = savedSliceCap > 1;
+
+      hilog.info(DOMAIN, TAG,
+        'Prefilling %{public}d video frames (savedSlice=%{public}d, override=%{public}s)',
+        frames.length, savedSliceCap, `${needOverride}`);
+      this.setState(LlamaState.PrefillingImage);
+      try {
+        if (needOverride) {
+          hilog.info(DOMAIN, TAG, 'Temporarily forcing image_max_slice_nums=1 for video');
+          nativeEngine.setImageMaxSliceNums(1);
+        }
+        for (let i = 0; i < frames.length; i++) {
+          const rc = await nativeEngine.prefillImage(frames[i]);
+          if (rc !== 0) {
+            throw new Error(
+              `Failed to prefill video frame ${i + 1}/${frames.length} (code: ${rc})`);
+          }
+          onProgress(i + 1, frames.length);
+        }
+        hilog.info(DOMAIN, TAG, 'Video frames prefilled successfully');
+      } finally {
+        if (needOverride) {
+          hilog.info(DOMAIN, TAG,
+            'Restoring image_max_slice_nums=%{public}d after video', savedSliceCap);
+          nativeEngine.setImageMaxSliceNums(savedSliceCap);
+        }
+        this.setState(LlamaState.ModelReady);
+      }
     });
   }
 

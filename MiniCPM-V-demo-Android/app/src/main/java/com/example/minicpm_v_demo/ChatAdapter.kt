@@ -123,7 +123,9 @@ class ChatAdapter(
 
     inner class UserMessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvText: TextView = itemView.findViewById(R.id.tv_user_text)
+        private val flImageContainer: View = itemView.findViewById(R.id.fl_user_image_container)
         private val ivImage: ImageView = itemView.findViewById(R.id.iv_user_image)
+        private val ivVideoBadge: ImageView = itemView.findViewById(R.id.iv_video_play_badge)
         private val tvImageInfo: TextView = itemView.findViewById(R.id.tv_image_info)
         private val progressImage: LinearProgressIndicator = itemView.findViewById(R.id.progress_image)
 
@@ -133,12 +135,14 @@ class ChatAdapter(
 
             if (item.imageBitmap != null) {
                 ivImage.setImageBitmap(item.imageBitmap)
-                ivImage.visibility = View.VISIBLE
+                flImageContainer.visibility = View.VISIBLE
+                ivVideoBadge.visibility = if (item.isVideo) View.VISIBLE else View.GONE
                 tvImageInfo.visibility = View.VISIBLE
                 tvImageInfo.text = item.imageInfo ?: ""
                 progressImage.visibility = if (item.isPrefilling) View.VISIBLE else View.GONE
             } else {
-                ivImage.visibility = View.GONE
+                flImageContainer.visibility = View.GONE
+                ivVideoBadge.visibility = View.GONE
                 tvImageInfo.visibility = View.GONE
                 progressImage.visibility = View.GONE
             }
@@ -190,7 +194,8 @@ class ChatAdapter(
                     oldItem.text == newItem.text &&
                             oldItem.imageBitmap == newItem.imageBitmap &&
                             oldItem.imageInfo == newItem.imageInfo &&
-                            oldItem.isPrefilling == newItem.isPrefilling
+                            oldItem.isPrefilling == newItem.isPrefilling &&
+                            oldItem.isVideo == newItem.isVideo
                 oldItem is ChatMessage.AiMessage && newItem is ChatMessage.AiMessage ->
                     oldItem.isGenerating == newItem.isGenerating &&
                             (oldItem.isGenerating || oldItem.text == newItem.text)

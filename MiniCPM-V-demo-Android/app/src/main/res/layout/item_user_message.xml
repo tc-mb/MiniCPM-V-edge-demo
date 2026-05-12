@@ -23,14 +23,35 @@
             android:orientation="vertical"
             android:padding="12dp">
 
-            <ImageView
-                android:id="@+id/iv_user_image"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
-                android:scaleType="centerCrop"
+            <FrameLayout
+                android:id="@+id/fl_user_image_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:visibility="gone"
-                android:layout_marginBottom="8dp"
-                android:contentDescription="@string/image_desc" />
+                android:layout_marginBottom="8dp">
+
+                <ImageView
+                    android:id="@+id/iv_user_image"
+                    android:layout_width="200dp"
+                    android:layout_height="200dp"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="@string/image_desc" />
+
+                <!-- Play badge overlay; only visible for video messages.
+                     Mirrors iOS MBImageTableViewCell's video overlay so
+                     the user can tell at a glance "this was a video, the
+                     model saw N sampled frames". -->
+                <ImageView
+                    android:id="@+id/iv_video_play_badge"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center"
+                    android:visibility="gone"
+                    android:background="@drawable/bg_video_play_badge"
+                    android:padding="10dp"
+                    android:src="@drawable/ic_play_arrow"
+                    android:contentDescription="@string/image_desc" />
+            </FrameLayout>
 
             <com.google.android.material.progressindicator.LinearProgressIndicator
                 android:id="@+id/progress_image"

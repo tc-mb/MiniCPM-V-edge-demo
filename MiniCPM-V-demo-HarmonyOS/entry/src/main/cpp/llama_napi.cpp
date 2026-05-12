@@ -52,6 +52,11 @@ static std::string join(const std::vector<T> &values, const std::string &delim) 
 //   MiniCPM-V-demo-Android/app/src/main/cpp/llama_jni.cpp  (Android)
 constexpr int   N_THREADS               = 4;
 constexpr int   DEFAULT_CONTEXT_SIZE    = 4096;
+// MiniCPM-V-4.6 video understanding feeds up to 64 frames * ~64 visual
+// tokens each into the KV cache; 4096 is not enough.  iOS demo
+// (MBHomeViewController+LoadModel.swift) bumps n_ctx to 8192 only on
+// V-4.6 load so older / non-vision models keep the cheaper 4096 budget.
+constexpr int   V46_CONTEXT_SIZE        = 8192;
 constexpr int   OVERFLOW_HEADROOM       = 4;
 constexpr int   BATCH_SIZE              = 2048;
 constexpr float DEFAULT_SAMPLER_TEMP    = 0.7f;
@@ -75,6 +80,11 @@ static int                                g_minicpmv_version = 0;
 // uses LlamaEngine.loadModel(...) which calls loadMmproj(path, n) with
 // the persisted value.  Mirrors llama_jni.cpp on Android.
 static int                                g_image_max_slice_nums = 9;
+
+// Effective n_ctx used to create g_context.  Set by Prepare(); read by
+// the few stay-under-context guards scattered through this file.
+// Mirrors g_n_ctx in MiniCPM-V-demo-Android/app/src/main/cpp/llama_jni.cpp.
+static int                                g_n_ctx = DEFAULT_CONTEXT_SIZE;
 
 // =============================================================================
 // Generic NAPI helpers
@@ -216,6 +226,15 @@ napi_value LoadMmproj(napi_env env, napi_callback_info info) {
     return napi_make_int(env, 0);
 }
 
+// Returns the MiniCPM-V family version of the currently loaded mmproj
+// (0 if no mmproj is loaded).  Used by the ArkTS layer to decide
+// whether the video-understanding path is available (only V-4.6:
+// 46 / 460 / 461).  Mirrors getMinicpmvVersionNative on Android and
+// mtmd_get_minicpmv_version on iOS.
+napi_value GetMinicpmvVersion(napi_env env, napi_callback_info /*info*/) {
+    return napi_make_int(env, g_minicpmv_version);
+}
+
 // Live update of the per-image slice cap (no mmproj reload).  Slicing
 // decision happens at encode time so the next image picks up the new
 // value automatically.  Mirrors Java_..._setImageMaxSliceNumsNative on
@@ -275,9 +294,20 @@ static common_sampler *new_sampler(float temp) {
 }
 
 napi_value Prepare(napi_env env, napi_callback_info /*info*/) {
-    auto *context = init_context(g_model);
+    // MiniCPM-V-4.6 video understanding (up to 64 frames per turn) needs
+    // a larger KV budget than the 4096 default; everything else stays at
+    // 4096 to keep memory pressure low on older / non-vision models.
+    // Matches the iOS demo's MTMDParams.nCtx = 8192 on V46MultiModel.
+    const bool is_v46 = (g_minicpmv_version == 46) ||
+                        (g_minicpmv_version == 460) ||
+                        (g_minicpmv_version == 461);
+    const int  n_ctx  = is_v46 ? V46_CONTEXT_SIZE : DEFAULT_CONTEXT_SIZE;
+    LOGi("Prepare: minicpmv_version=%{public}d -> n_ctx=%{public}d", g_minicpmv_version, n_ctx);
+
+    auto *context = init_context(g_model, n_ctx);
     if (!context) { return napi_make_int(env, 1); }
     g_context = context;
+    g_n_ctx = n_ctx;
     g_batch = llama_batch_init(BATCH_SIZE, 0, 1);
     g_chat_templates = common_chat_templates_init(g_model, "");
     g_sampler = new_sampler(DEFAULT_SAMPLER_TEMP);
@@ -383,7 +413,7 @@ static int decode_tokens_in_batches(
         const int cur_batch_size = std::min((int) tokens.size() - i, BATCH_SIZE);
         common_batch_clear(batch);
 
-        if (start_pos + i + cur_batch_size >= DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM) {
+        if (start_pos + i + cur_batch_size >= g_n_ctx - OVERFLOW_HEADROOM) {
             LOGw("decode_tokens_in_batches: Won't fit, shifting...");
             shift_context();
         }
@@ -449,7 +479,7 @@ napi_value ProcessSystemPrompt(napi_env env, napi_callback_info info) {
     } else {
         const auto system_tokens = common_tokenize(g_context, formatted_system_prompt,
                                                    current_position == 0, true);
-        const int max_batch_size = DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM;
+        const int max_batch_size = g_n_ctx - OVERFLOW_HEADROOM;
         if ((int) system_tokens.size() > max_batch_size) {
             LOGe("ProcessSystemPrompt: too long! %{public}d tokens, max %{public}d",
                  (int) system_tokens.size(), max_batch_size);
@@ -755,7 +785,7 @@ static int run_user_prompt_prefill(const std::string &user_prompt, int n_predict
         auto user_tokens = common_tokenize(g_context, formatted_user_prompt,
                                            current_position == 0, true);
         const int user_prompt_size = (int) user_tokens.size();
-        const int max_batch_size   = DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM;
+        const int max_batch_size   = g_n_ctx - OVERFLOW_HEADROOM;
         if (user_prompt_size > max_batch_size) {
             const int skipped_tokens = user_prompt_size - max_batch_size;
             user_tokens.resize(max_batch_size);
@@ -823,7 +853,7 @@ static void stream_worker(StreamCtx *ctx) {
         LOGe("stream_worker: prefill failed %{public}d", rc);
     } else {
         while (!g_cancel_generation.load()) {
-            if (current_position >= DEFAULT_CONTEXT_SIZE - OVERFLOW_HEADROOM) {
+            if (current_position >= g_n_ctx - OVERFLOW_HEADROOM) {
                 LOGw("stream_worker: Context full! Shifting...");
                 shift_context();
             }

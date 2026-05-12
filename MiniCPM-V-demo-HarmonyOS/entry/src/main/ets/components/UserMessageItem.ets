@@ -15,11 +15,28 @@ export struct UserMessageItem {
 
       Column({ space: 6 }) {
         if (this.message.imagePixelMap !== null) {
-          Image(this.message.imagePixelMap)
-            .width(220)
-            .height(220)
-            .objectFit(ImageFit.Cover)
-            .borderRadius(8);
+          // Stack so we can overlay a play-arrow badge on top of the
+          // thumbnail for video messages (matches iOS demo
+          // MBImageTableViewCell's video overlay and the Android
+          // item_user_message.xml FrameLayout wrapper).
+          Stack({ alignContent: Alignment.Center }) {
+            Image(this.message.imagePixelMap)
+              .width(220)
+              .height(220)
+              .objectFit(ImageFit.Cover)
+              .borderRadius(8);
+            if (this.message.isVideo) {
+              Image($r('app.media.ic_play_arrow'))
+                .width(28)
+                .height(28)
+                .fillColor(Color.White)
+                .padding(10)
+                .borderRadius(24)
+                .backgroundColor('#80000000');
+            }
+          }
+          .width(220)
+          .height(220);
           if (this.message.imageInfo !== null && this.message.imageInfo.length > 0) {
             Text(this.message.imageInfo)
               .fontSize(12)

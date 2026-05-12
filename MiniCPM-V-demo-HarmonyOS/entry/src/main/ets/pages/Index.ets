@@ -22,7 +22,18 @@ import { WelcomeCard } from '../components/WelcomeCard';
 import { UserMessageItem } from '../components/UserMessageItem';
 import { AiMessageItem } from '../components/AiMessageItem';
 import { ImageSliceDialog } from '../components/ImageSliceDialog';
-import { pickAndDecodeImage, imageInfoString, PickedImage } from '../utils/ImageCodec';
+import {
+  pickImageOrVideoUri,
+  decodeImageFromUri,
+  imageInfoString,
+  PickedImage,
+  PickedMediaUri,
+} from '../utils/ImageCodec';
+import {
+  extractFromUri as extractVideoFromUri,
+  videoInfoString,
+  PickedVideo,
+} from '../utils/VideoFrameExtractor';
 
 const DOMAIN = 0xC0DE;
 const TAG = 'Index';
@@ -270,18 +281,35 @@ struct Index {
       promptAction.showToast({ message: '当前模型不支持图像输入', duration: 1500 });
       return;
     }
-    let picked: PickedImage | null = null;
+    let pickedUri: PickedMediaUri | null = null;
     try {
-      picked = await pickAndDecodeImage();
+      pickedUri = await pickImageOrVideoUri();
     } catch (e) {
-      hilog.error(DOMAIN, TAG, 'pickAndDecodeImage failed: %{public}s', `${e}`);
-      promptAction.showToast({ message: `选择图片失败: ${e}`, duration: 3000 });
+      hilog.error(DOMAIN, TAG, 'pickImageOrVideoUri failed: %{public}s', `${e}`);
+      promptAction.showToast({ message: `选择媒体失败: ${e}`, duration: 3000 });
       return;
     }
-    if (!picked) return;
+    if (!pickedUri) return;
+
+    if (pickedUri.isVideo) {
+      await this.handlePickedVideo(pickedUri.uri);
+    } else {
+      await this.handlePickedImage(pickedUri.uri);
+    }
+  }
+
+  private async handlePickedImage(uri: string): Promise<void> {
+    let picked: PickedImage;
+    try {
+      picked = await decodeImageFromUri(uri);
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'decodeImageFromUri failed: %{public}s', `${e}`);
+      promptAction.showToast({ message: `图片解码失败: ${e}`, duration: 3000 });
+      return;
+    }
 
     const id = this.messageIdCounter++;
-    const message = ChatMessage.user(id, '', picked.pixelMap, imageInfoString(picked), true);
+    const message = ChatMessage.user(id, '', picked.pixelMap, imageInfoString(picked), true, false);
     this.messageList.push(message);
     this.scrollToEnd();
 
@@ -297,6 +325,73 @@ struct Index {
     } catch (e) {
       hilog.error(DOMAIN, TAG, 'prefillImage failed: %{public}s', `${e}`);
       promptAction.showToast({ message: `图片处理失败: ${e}`, duration: 3000 });
+    }
+  }
+
+  /**
+   * Video-understanding pipeline (iOS-equivalent
+   * MBHomeViewController+CaptureVideo.processVideoFrame):
+   * extract up to 64 uniformly-sampled frames, append a single chat
+   * cell with the first frame as thumbnail, then hand the frames to
+   * LlamaEngine.prefillVideoFrames which loops `prefillImage(...)`
+   * under a temporary slice=1 cap.
+   *
+   * Gated to MiniCPM-V-4.6 because that's where iOS enables the
+   * feature and where the native nCtx bump to 8192 takes effect (see
+   * Prepare() in llama_napi.cpp).
+   */
+  private async handlePickedVideo(uri: string): Promise<void> {
+    if (!this.engine!.isVideoUnderstandingSupported()) {
+      promptAction.showToast({
+        message: '视频理解仅在 MiniCPM-V-4.6 上可用，请前往“模型管理”切换模型',
+        duration: 4000,
+      });
+      return;
+    }
+    const id = this.messageIdCounter++;
+    const startMs = Date.now();
+    let video: PickedVideo | null = null;
+    try {
+      video = await extractVideoFromUri(uri);
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'video extract failed: %{public}s', `${e}`);
+      promptAction.showToast({ message: `视频抽帧失败: ${e}`, duration: 4000 });
+      return;
+    }
+    if (!video) return;
+
+    const baseInfo = videoInfoString(video);
+    hilog.info(DOMAIN, TAG, 'Video info: %{public}s', baseInfo);
+
+    const message = ChatMessage.user(id, '', video.thumbnail, baseInfo, true, true);
+    this.messageList.push(message);
+    this.scrollToEnd();
+
+    try {
+      await this.engine!.prefillVideoFrames(video.frames, (current: number, total: number): void => {
+        const idx = this.messageList.indexOfId(id);
+        if (idx >= 0) {
+          const m = this.messageList.getData(idx);
+          m.imageInfo = `${baseInfo} · 处理中 ${current}/${total}`;
+          this.messageList.notifyChange(idx);
+        }
+      });
+      this.isImagePrefilled = true;
+      const elapsedSec = ((Date.now() - startMs) / 1000.0).toFixed(1);
+      const idx = this.messageList.indexOfId(id);
+      if (idx >= 0) {
+        const m = this.messageList.getData(idx);
+        m.imageInfo = `${baseInfo} · 预处理 ${elapsedSec}s`;
+        m.isPrefilling = false;
+        this.messageList.notifyChange(idx);
+      }
+    } catch (e) {
+      hilog.error(DOMAIN, TAG, 'prefillVideoFrames failed: %{public}s', `${e}`);
+      const idx = this.messageList.indexOfId(id);
+      if (idx >= 0) {
+        this.messageList.removeAt(idx);
+      }
+      promptAction.showToast({ message: `视频处理失败: ${e}`, duration: 4000 });
     }
   }
 
