@@ -46,9 +46,6 @@
 #    define MTMD_API
 #endif
 
-// deprecated marker, use mtmd_default_marker() instead
-#define MTMD_DEFAULT_IMAGE_MARKER "<__image__>"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -96,18 +93,9 @@ struct mtmd_context_params {
     int image_min_tokens; // minimum number of tokens for image input (default: read from metadata)
     int image_max_tokens; // maximum number of tokens for image input (default: read from metadata)
 
-    // upper bound on image slice/tile count, only used by llava-uhd style models (e.g. minicpm-v).
-    // default: -1, meaning fall back to the built-in value (currently 9 for minicpm-v).
-    // set to 1 to disable slicing entirely (single overview image, ~9x fewer tokens, much faster
-    // on mobile but loses high-resolution detail).
-    int image_max_slice_nums;
-
     // callback function passed over to mtmd proper
     ggml_backend_sched_eval_callback cb_eval;
     void * cb_eval_user_data;
-
-    // CoreML model path for ANE acceleration (iOS)
-    const char * coreml_model_path;
 };
 
 MTMD_API const char * mtmd_default_marker(void);
@@ -122,35 +110,22 @@ MTMD_API mtmd_context * mtmd_init_from_file(const char * mmproj_fname,
 
 MTMD_API void mtmd_free(mtmd_context * ctx);
 
-// Runtime override of the maximum number of image slices/tiles used by
-// llava-uhd style pre-processing (e.g. MiniCPM-V).  Pass `-1` to revert to
-// the model default (currently 9 for MiniCPM-V), or `1` to disable slicing
-// entirely (single overview image, much faster on mobile but loses
-// high-resolution detail).  Safe to call between images; only takes
-// effect on the next encode.  No-op for models that don't use slicing.
-MTMD_API void mtmd_set_image_max_slice_nums(mtmd_context * ctx, int n);
-
 // whether we need to set non-causal mask before llama_decode
-MTMD_API bool mtmd_decode_use_non_causal(mtmd_context * ctx);
+// if chunk is nullptr, we assume the default case where chunk is an image chunk
+MTMD_API bool mtmd_decode_use_non_causal(const mtmd_context * ctx, const mtmd_input_chunk * chunk);
 
 // whether the current model use M-RoPE for llama_decode
-MTMD_API bool mtmd_decode_use_mrope(mtmd_context * ctx);
+MTMD_API bool mtmd_decode_use_mrope(const mtmd_context * ctx);
 
 // whether the current model supports vision input
-MTMD_API bool mtmd_support_vision(mtmd_context * ctx);
+MTMD_API bool mtmd_support_vision(const mtmd_context * ctx);
 
 // whether the current model supports audio input
-MTMD_API bool mtmd_support_audio(mtmd_context * ctx);
+MTMD_API bool mtmd_support_audio(const mtmd_context * ctx);
 
 // get audio sample rate in Hz, for example 16000 for Whisper
 // return -1 if audio is not supported
-MTMD_API int mtmd_get_audio_sample_rate(mtmd_context * ctx);
-
-// get the MiniCPM-V family version of the loaded vision encoder.
-// returns 0 when the model is not a MiniCPM-V variant (or no vision encoder was loaded).
-// known values: 2, 3, 4, 5 (V-4.0), 6 (o-4.0), 100045 (o-4.5),
-//               46 / 460 (V-4.6 instruct) / 461 (V-4.6 thinking).
-MTMD_API int mtmd_get_minicpmv_version(mtmd_context * ctx);
+MTMD_API int mtmd_get_audio_sample_rate(const mtmd_context * ctx);
 
 // mtmd_bitmap
 //
@@ -208,11 +183,26 @@ MTMD_API void               mtmd_input_chunk_free(mtmd_input_chunk * chunk);
 // the instance will be constructed via mtmd_tokenize()
 // it will be freed along with mtmd_input_chunk
 MTMD_API size_t       mtmd_image_tokens_get_n_tokens(const mtmd_image_tokens * image_tokens); // TODO: deprecate
-MTMD_API size_t       mtmd_image_tokens_get_nx      (const mtmd_image_tokens * image_tokens);
-MTMD_API size_t       mtmd_image_tokens_get_ny      (const mtmd_image_tokens * image_tokens);
 MTMD_API const char * mtmd_image_tokens_get_id      (const mtmd_image_tokens * image_tokens); // TODO: deprecate
 // number of temporal positions (equals to max(t,h,w) for M-RoPE; equals to n_tokens otherwise)
 MTMD_API llama_pos    mtmd_image_tokens_get_n_pos   (const mtmd_image_tokens * image_tokens); // TODO: deprecate
+
+DEPRECATED(MTMD_API size_t mtmd_image_tokens_get_nx(const mtmd_image_tokens * image_tokens),
+           "use mtmd_image_tokens_get_decoder_pos() instead");
+DEPRECATED(MTMD_API size_t mtmd_image_tokens_get_ny(const mtmd_image_tokens * image_tokens),
+           "use mtmd_image_tokens_get_decoder_pos() instead");
+
+struct mtmd_decoder_pos {
+    uint32_t t;
+    uint32_t x;
+    uint32_t y;
+    uint32_t z; // unused for now, reserved for future use
+};
+// get position for decoder attention, to be used by M-RoPE models
+// i is the index of the embedding token, ranging from 0 to mtmd_image_tokens_get_n_tokens() - 1
+// pos_0 is the absolute position of the first token
+// return relative position (for example, embedding 0 will have position (0, 0, 0); remember to adjust it to the current absolute position)
+MTMD_API struct mtmd_decoder_pos mtmd_image_tokens_get_decoder_pos(const mtmd_image_tokens * image_tokens, llama_pos pos_0, size_t i);
 
 // tokenize an input text prompt and a list of bitmaps (images/audio)
 // the prompt must have the input image marker (default: "<__media__>") in it
@@ -253,6 +243,14 @@ MTMD_API float * mtmd_get_output_embd(mtmd_context * ctx);
 // Set callback for all future logging events.
 // If this is not called, or NULL is supplied, everything is output on stderr.
 MTMD_API void mtmd_log_set(ggml_log_callback log_callback, void * user_data);
+
+// EXPERIMENTAL API to get mmproj's capabilities without initializing the full context
+// This is only intended to be used by llama-server, breaking changes is expected
+struct mtmd_caps {
+    bool inp_vision;
+    bool inp_audio;
+};
+MTMD_API struct mtmd_caps mtmd_get_cap_from_file(const char * mmproj_fname);
 
 /////////////////////////////////////////
 

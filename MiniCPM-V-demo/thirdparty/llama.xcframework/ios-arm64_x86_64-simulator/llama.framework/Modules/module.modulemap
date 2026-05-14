@@ -7,7 +7,6 @@ framework module llama {
     header "ggml-cpu.h"
     header "ggml-blas.h"
     header "gguf.h"
-    header "mtmd-ios.h"
     header "mtmd.h"
     header "mtmd-helper.h"
 
